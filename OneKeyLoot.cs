@@ -255,8 +255,9 @@ namespace OneKeyLoot
             private static Color GetButtonColor(int ordinal) =>
                 ButtonColorPalette[ordinal % ButtonColorPalette.Length];
 
-            private static readonly Func<Item, int> s_MetricValue = static it => it.Value / 2;
-            private static readonly Func<Item, int> s_MetricQuality = static it => it.Quality;
+            private static readonly Func<Item, int> s_MetricValue = static item =>
+                item.GetTotalRawValue() / 2;
+            private static readonly Func<Item, int> s_MetricQuality = static item => item.Quality;
 
             // CSV 解析：失败时回退到默认配置
             private static List<int> ParseRangeCsv(string csv, string fallbackCsv)
