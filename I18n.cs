@@ -24,6 +24,7 @@ namespace OneKeyLoot
             Config,
             Quality,
             Value,
+            ValueWeight,
         }
 
         // ===== 文案 Key =====
@@ -33,23 +34,35 @@ namespace OneKeyLoot
             {
                 public const string ShowCollectAll = "OKL.Config_ShowCollectAll";
                 public const string ShowQuality = "OKL.Config_ShowQuality";
-                public const string QaulityRange = "OKL.Config_QaulityRange";
                 public const string ShowValue = "OKL.Config_ShowValue";
+                public const string ShowValueWeight = "OKL.Config_ShowValueWeight";
+                public const string QualityRange = "OKL.Config_QualityRange";
                 public const string ValueRange = "OKL.Config_ValueRange";
+                public const string ValueWeightRange = "OKL.Config_ValueWeightRange";
+                public const string QualityColor = "OKL.Config_QualityColor";
+                public const string ValueColor = "OKL.Config_ValueColor";
+                public const string ValueWeightColor = "OKL.Config_ValueWeightColor";
             }
 
             public static class Quality
             {
                 public const string Title = "OKL.Quality_Title";
-                public const string ButtonTextDefault = "OKL.Quality_ButtonTextDefault"; // 需要占位符 ≥{0}
+                public const string ButtonText = "OKL.Quality_ButtonText"; // 需要占位符 ≥{0}
                 public const string ButtonFontSize = "OKL.Quality_ButtonFontSize"; // 元数据：字号（数字）
             }
 
             public static class Value
             {
                 public const string Title = "OKL.Value_Title";
-                public const string ButtonTextDefault = "OKL.Value_ButtonTextDefault"; // 需要占位符 ≥{0}
+                public const string ButtonText = "OKL.Value_ButtonText"; // 需要占位符 ≥{0}
                 public const string ButtonFontSize = "OKL.Value_ButtonFontSize"; // 元数据：字号（数字）
+            }
+
+            public static class ValueWeight
+            {
+                public const string Title = "OKL.ValueWeight_Title";
+                public const string ButtonText = "OKL.ValueWeight_ButtonText"; // 需要占位符 ≥{0}
+                public const string ButtonFontSize = "OKL.ValueWeight_ButtonFontSize"; // 元数据：字号（数字）
             }
         }
 
@@ -84,69 +97,78 @@ namespace OneKeyLoot
             // Config
             .AddText(Keys.Config.ShowCollectAll, "Display [Collect All]")
             .AddText(Keys.Config.ShowQuality, "Display [One-Key Loot (by Quality)]")
-            .AddText(Keys.Config.QaulityRange, "Quality Range (1~9)")
             .AddText(Keys.Config.ShowValue, "Display [One-Key Loot (by Value)]")
+            .AddText(
+                Keys.Config.ShowValueWeight,
+                "Display [One-Key Loot (by Value per unit Weight)]"
+            )
+            .AddText(Keys.Config.QualityRange, "Quality Range (1~9)")
             .AddText(Keys.Config.ValueRange, "Value Range (1+)")
+            .AddText(Keys.Config.ValueWeightRange, "Value/Weight Range (1+)")
+            .AddText(Keys.Config.QualityColor, "Quality ButtonGroup Color")
+            .AddText(Keys.Config.ValueColor, "Value ButtonGroup Color")
+            .AddText(Keys.Config.ValueWeightColor, "Value/Weight ButtonGroup Color")
             // Quality
             .AddText(Keys.Quality.Title, "One-Key Loot (by Quality)")
-            .AddText(Keys.Quality.ButtonTextDefault, "Quality ≥ {0}")
+            .AddText(Keys.Quality.ButtonText, "Quality ≥ {0}")
             .AddMeta(Keys.Quality.ButtonFontSize, 20)
             // Value
             .AddText(Keys.Value.Title, "One-Key Loot (by Value)")
-            .AddText(Keys.Value.ButtonTextDefault, "Value ≥ {0}")
-            .AddMeta(Keys.Value.ButtonFontSize, 20);
+            .AddText(Keys.Value.ButtonText, "Value ≥ {0}")
+            .AddMeta(Keys.Value.ButtonFontSize, 20)
+            // Value/Weight
+            .AddText(Keys.ValueWeight.Title, "One-Key Loot (by Value per unit Weight)")
+            .AddText(Keys.ValueWeight.ButtonText, "$/kg ≥ {0}")
+            .AddMeta(Keys.ValueWeight.ButtonFontSize, 22);
 
         private static readonly LanguagePack PackZH = new LanguagePack()
             // Config
             .AddText(Keys.Config.ShowCollectAll, "显示【全部拾取】")
             .AddText(Keys.Config.ShowQuality, "显示【一键收集战利品（按品质）】")
-            .AddText(Keys.Config.QaulityRange, "品质范围（1~9）")
+            .AddText(Keys.Config.QualityRange, "品质范围（1~9）")
             .AddText(Keys.Config.ShowValue, "显示【一键收集战利品（按价值）】")
             .AddText(Keys.Config.ValueRange, "价值范围（1+）")
+            .AddText(Keys.Config.ShowValueWeight, "显示【一键收集战利品（按价重比）】")
+            .AddText(Keys.Config.ValueWeightRange, "价重比范围 (1+)")
+            .AddText(Keys.Config.QualityColor, "品质按钮组颜色")
+            .AddText(Keys.Config.ValueColor, "价值按钮组颜色")
+            .AddText(Keys.Config.ValueWeightColor, "价重比按钮组颜色")
             // Quality
             .AddText(Keys.Quality.Title, "一键收集战利品（按品质）")
-            .AddText(Keys.Quality.ButtonTextDefault, "品质≥{0}")
+            .AddText(Keys.Quality.ButtonText, "品质≥{0}")
             .AddMeta(Keys.Quality.ButtonFontSize, 24)
             // Value
             .AddText(Keys.Value.Title, "一键收集战利品（按价值）")
-            .AddText(Keys.Value.ButtonTextDefault, "价值≥{0}")
-            .AddMeta(Keys.Value.ButtonFontSize, 24);
+            .AddText(Keys.Value.ButtonText, "价值≥{0}")
+            .AddMeta(Keys.Value.ButtonFontSize, 24)
+            // Value/Weight
+            .AddText(Keys.ValueWeight.Title, "一键收集战利品（按价重比）")
+            .AddText(Keys.ValueWeight.ButtonText, "价重比≥{0}")
+            .AddMeta(Keys.ValueWeight.ButtonFontSize, 20);
 
         private static LanguagePack s_CurrentPack = PackEN;
 
         // ===== 组配置（UI 寻址、命名约定）=====
-        private sealed class ButtonGroupConfig
+        private sealed class ButtonGroupConfig(
+            LootGroupId id,
+            string titleKey,
+            string btnFmtKey,
+            string fontKey,
+            string panelName,
+            string titleName,
+            string rowName,
+            string buttonPattern
+        )
         {
-            public LootGroupId Id;
-            public string TitleKey;
-            public string ButtonFmtKey;
-            public string FontSizeKey;
+            public LootGroupId Id = id;
+            public string TitleKey = titleKey;
+            public string ButtonFmtKey = btnFmtKey;
+            public string FontSizeKey = fontKey;
 
-            public string PanelName; // e.g., UIConstants.QualityPanelName / ValuePanelName
-            public string TitleNodeName; // e.g., UIConstants.QualityTitleName / ValueTitleName
-            public string RowName; // e.g., UIConstants.QualityRowName / ValueRowName
-            public string ButtonNamePattern; // "OKL_Button_Quality_{0}" / "OKL_Button_Value_{0}"
-
-            public ButtonGroupConfig(
-                LootGroupId id,
-                string titleKey,
-                string btnFmtKey,
-                string fontKey,
-                string panelName,
-                string titleName,
-                string rowName,
-                string buttonPattern
-            )
-            {
-                Id = id;
-                TitleKey = titleKey;
-                ButtonFmtKey = btnFmtKey;
-                FontSizeKey = fontKey;
-                PanelName = panelName;
-                TitleNodeName = titleName;
-                RowName = rowName;
-                ButtonNamePattern = buttonPattern;
-            }
+            public string PanelName = panelName; // e.g., UIConstants.QualityPanelName / ValuePanelName
+            public string TitleNodeName = titleName; // e.g., UIConstants.QualityTitleName / ValueTitleName
+            public string RowName = rowName; // e.g., UIConstants.QualityRowName / ValueRowName
+            public string ButtonNamePattern = buttonPattern; // "OKL_Button_Quality_{0}" / "OKL_Button_Value_{0}"
         }
 
         private static readonly List<ButtonGroupConfig> s_Groups =
@@ -154,7 +176,7 @@ namespace OneKeyLoot
             new ButtonGroupConfig(
                 LootGroupId.Quality,
                 Keys.Quality.Title,
-                Keys.Quality.ButtonTextDefault,
+                Keys.Quality.ButtonText,
                 Keys.Quality.ButtonFontSize,
                 UIConstants.QualityPanelName,
                 UIConstants.QualityTitleName,
@@ -164,12 +186,22 @@ namespace OneKeyLoot
             new ButtonGroupConfig(
                 LootGroupId.Value,
                 Keys.Value.Title,
-                Keys.Value.ButtonTextDefault,
+                Keys.Value.ButtonText,
                 Keys.Value.ButtonFontSize,
                 UIConstants.ValuePanelName,
                 UIConstants.ValueTitleName,
                 UIConstants.ValueRowName,
                 "OKL_Button_Value_{0}"
+            ),
+            new ButtonGroupConfig(
+                LootGroupId.ValueWeight,
+                Keys.ValueWeight.Title,
+                Keys.ValueWeight.ButtonText,
+                Keys.ValueWeight.ButtonFontSize,
+                UIConstants.ValueWeightPanelName,
+                UIConstants.ValueWeightTitleName,
+                UIConstants.ValueWeightRowName,
+                "OKL_Button_ValueWeight_{0}"
             ),
         ];
 
@@ -183,16 +215,21 @@ namespace OneKeyLoot
             public string Format(int x) => string.Format(ButtonFmt, x);
         }
 
-        private static readonly Dictionary<LootGroupId, GroupCache> s_GroupCaches = new();
+        private static readonly Dictionary<LootGroupId, GroupCache> s_GroupCaches = [];
 
         // ===== Config 文案缓存 =====
         private sealed class ConfigCache
         {
             public string ShowCollectAllLabel;
             public string ShowQualityLabel;
-            public string QualityRangeLabel;
             public string ShowValueLabel;
+            public string ShowValueWeightLabel;
+            public string QualityRangeLabel;
             public string ValueRangeLabel;
+            public string ValueWeightRangeLabel;
+            public string QualityColorLabel;
+            public string ValueColorLabel;
+            public string ValueWeightColorLabel;
         }
 
         private static ConfigCache s_Config;
@@ -202,9 +239,14 @@ namespace OneKeyLoot
         {
             public static string ShowCollectAllLabel => s_Config.ShowCollectAllLabel;
             public static string ShowQualityLabel => s_Config.ShowQualityLabel;
-            public static string QualityRangeLabel => s_Config.QualityRangeLabel;
             public static string ShowValueLabel => s_Config.ShowValueLabel;
+            public static string ShowValueWeightLabel => s_Config.ShowValueWeightLabel;
+            public static string QualityRangeLabel => s_Config.QualityRangeLabel;
             public static string ValueRangeLabel => s_Config.ValueRangeLabel;
+            public static string ValueWeightRangeLabel => s_Config.ValueWeightRangeLabel;
+            public static string QualityColorLabel => s_Config.QualityColorLabel;
+            public static string ValueColorLabel => s_Config.ValueColorLabel;
+            public static string ValueWeightColorLabel => s_Config.ValueWeightColorLabel;
         }
 
         public static class Quality
@@ -219,6 +261,15 @@ namespace OneKeyLoot
         public static class Value
         {
             private static GroupCache C => s_GroupCaches[LootGroupId.Value];
+            public static string Title => C.Title;
+            public static int ButtonFontSize => C.FontSize;
+
+            public static string Button(int v) => C.Format(v);
+        }
+
+        public static class ValueWeight
+        {
+            private static GroupCache C => s_GroupCaches[LootGroupId.ValueWeight];
             public static string Title => C.Title;
             public static int ButtonFontSize => C.FontSize;
 
@@ -273,9 +324,14 @@ namespace OneKeyLoot
             {
                 ShowCollectAllLabel = s_CurrentPack.Texts[Keys.Config.ShowCollectAll],
                 ShowQualityLabel = s_CurrentPack.Texts[Keys.Config.ShowQuality],
-                QualityRangeLabel = s_CurrentPack.Texts[Keys.Config.QaulityRange],
                 ShowValueLabel = s_CurrentPack.Texts[Keys.Config.ShowValue],
+                ShowValueWeightLabel = s_CurrentPack.Texts[Keys.Config.ShowValueWeight],
+                QualityRangeLabel = s_CurrentPack.Texts[Keys.Config.QualityRange],
                 ValueRangeLabel = s_CurrentPack.Texts[Keys.Config.ValueRange],
+                ValueWeightRangeLabel = s_CurrentPack.Texts[Keys.Config.ValueWeightRange],
+                QualityColorLabel = s_CurrentPack.Texts[Keys.Config.QualityColor],
+                ValueColorLabel = s_CurrentPack.Texts[Keys.Config.ValueColor],
+                ValueWeightColorLabel = s_CurrentPack.Texts[Keys.Config.ValueWeightColor],
             };
 
             // 热刷新所有已打开的 LootView
@@ -285,7 +341,7 @@ namespace OneKeyLoot
         // ===== UI 刷新（扫描按钮名后缀）=====
         public static void RelabelActiveLootViews()
         {
-            var all = Resources.FindObjectsOfTypeAll<Duckov.UI.LootView>();
+            var all = Resources.FindObjectsOfTypeAll<LootView>();
             foreach (var lv in all)
             {
                 var rt = lv ? lv.GetComponent<RectTransform>() : null;

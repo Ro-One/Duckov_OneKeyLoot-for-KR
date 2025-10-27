@@ -19,10 +19,19 @@ namespace OneKeyLoot
 {
     public static class UIConstants
     {
-        public static readonly Color Color2 = new Color(0.30f, 0.69f, 0.31f, 1f); // ≥2  #4CAF50 草绿
-        public static readonly Color Color3 = new Color(0.26f, 0.65f, 0.96f, 1f); // ≥3  #42A5F5 天蓝
-        public static readonly Color Color4 = new Color(0.73f, 0.41f, 0.78f, 1f); // ≥4  #BA68C8 柔紫
-        public static readonly Color Color5 = new Color(0.75f, 0.50f, 0.20f, 1f); // ≥5  #C08032 暖橙
+        private static Color Hex(string str)
+        {
+            if (ColorUtility.TryParseHtmlString(str, out var color))
+            {
+                return color;
+            }
+            return new Color(0.30f, 0.69f, 0.31f, 1f);
+        }
+
+        public static readonly Color Color2 = Hex("#4CAF4F"); // ≥2 草绿
+        public static readonly Color Color3 = Hex("#42A5F5"); // ≥3 天蓝
+        public static readonly Color Color4 = Hex("#BA68C6"); // ≥4 柔紫
+        public static readonly Color Color5 = Hex("#BF7F33"); // ≥5 暖橙
         public const string LabelName = "OKL_Label";
         public const float ButtonRowSpacing = 8f;
         public const float BottomSpacerHeight = 16f;
@@ -30,25 +39,33 @@ namespace OneKeyLoot
         public const string TitleName = "OKL_Title";
 
         public const string QualityRowName = "OKL_Row_Quality";
-        public const string ValueRowName = "OKL_Row_Value";
         public const string QualityPanelName = "OKL_LabelPanel_Quality";
-        public const string ValuePanelName = "OKL_LabelPanel_Value";
         public const string QualityTitleName = "OKL_Title_Quality";
+        public const string ValueRowName = "OKL_Row_Value";
+        public const string ValuePanelName = "OKL_LabelPanel_Value";
         public const string ValueTitleName = "OKL_Title_Value";
+        public const string ValueWeightRowName = "OKL_Row_ValueWeight";
+        public const string ValueWeightPanelName = "OKL_LabelPanel_ValueWeight";
+        public const string ValueWeightTitleName = "OKL_Title_ValueWeight";
 
         public const int TitleFontSize = 24;
         public static readonly Color TitleColor = new(0.90f, 0.90f, 0.90f, 1f);
     }
 
-    [System.Serializable]
+    [Serializable]
     public class DefaultConfig
     {
         public bool showCollectAll = true;
         public bool showQuality = true;
-        public string qualityRange = "2,3,4,5";
         public bool showValue = true;
+        public bool showValueWeight = true;
+        public string qualityRange = "2,3,4,5";
         public string valueRange = "100,500,1000";
-        public string configToken = "OneKeyLoot_config_v1";
+        public string valueWeightRange = "500,2500,5000";
+        public string qualityColor = "#4CAF4F,#42A5F5,#BA68C6,#BF7F33";
+        public string valueColor = "#4CAF4F,#42A5F5,#BA68C6,#BF7F33";
+        public string valueWeightColor = "#4CAF4F,#42A5F5,#BA68C6,#BF7F33";
+        public string configToken = "OneKeyLoot_config_v2";
 
         public static readonly DefaultConfig Defaults = new();
     }
@@ -111,15 +128,18 @@ namespace OneKeyLoot
 
         private static void UpdateRuntimeConfigSnapshot(DefaultConfig src)
         {
-            if (s_RuntimeConfig == null)
-            {
-                s_RuntimeConfig = new DefaultConfig();
-            }
+            s_RuntimeConfig ??= new DefaultConfig();
             s_RuntimeConfig.showCollectAll = src.showCollectAll;
             s_RuntimeConfig.showQuality = src.showQuality;
-            s_RuntimeConfig.qualityRange = src.qualityRange;
             s_RuntimeConfig.showValue = src.showValue;
+            s_RuntimeConfig.showValueWeight = src.showValueWeight;
+            s_RuntimeConfig.qualityRange = src.qualityRange;
             s_RuntimeConfig.valueRange = src.valueRange;
+            s_RuntimeConfig.valueWeightRange = src.valueWeightRange;
+            s_RuntimeConfig.qualityColor = src.qualityColor;
+            s_RuntimeConfig.valueColor = src.valueColor;
+            s_RuntimeConfig.valueWeightColor = src.valueWeightColor;
+
             s_RuntimeConfig.configToken = src.configToken;
         }
 
@@ -148,6 +168,37 @@ namespace OneKeyLoot
             Debug.Log("准备添加ModConfig配置项");
             ModConfigAPI.SafeAddOnOptionsChangedDelegate(OnModConfigOptionsChanged);
 
+            // 倒序添加以保证显示顺序
+            ModConfigAPI.SafeAddInputWithSlider(
+                Mod_DisplayName,
+                "valueWeightColor",
+                i18n.Config.ValueWeightColorLabel,
+                typeof(string),
+                config.valueWeightColor,
+                null
+            );
+            ModConfigAPI.SafeAddInputWithSlider(
+                Mod_DisplayName,
+                "valueWeightRange",
+                i18n.Config.ValueWeightRangeLabel,
+                typeof(string),
+                config.valueWeightRange,
+                null
+            );
+            ModConfigAPI.SafeAddBoolDropdownList(
+                Mod_DisplayName,
+                "showValueWeight",
+                i18n.Config.ShowValueWeightLabel,
+                config.showValueWeight
+            );
+            ModConfigAPI.SafeAddInputWithSlider(
+                Mod_DisplayName,
+                "valueColor",
+                i18n.Config.ValueColorLabel,
+                typeof(string),
+                config.valueColor,
+                null
+            );
             ModConfigAPI.SafeAddInputWithSlider(
                 Mod_DisplayName,
                 "valueRange",
@@ -161,6 +212,14 @@ namespace OneKeyLoot
                 "showValue",
                 i18n.Config.ShowValueLabel,
                 config.showValue
+            );
+            ModConfigAPI.SafeAddInputWithSlider(
+                Mod_DisplayName,
+                "qualityColor",
+                i18n.Config.QualityColorLabel,
+                typeof(string),
+                config.qualityColor,
+                null
             );
             ModConfigAPI.SafeAddInputWithSlider(
                 Mod_DisplayName,
@@ -228,6 +287,31 @@ namespace OneKeyLoot
                 "valueRange",
                 config.valueRange
             );
+            config.showValueWeight = ModConfigAPI.SafeLoad<bool>(
+                Mod_DisplayName,
+                "showValueWeight",
+                config.showValueWeight
+            );
+            config.valueWeightRange = ModConfigAPI.SafeLoad<string>(
+                Mod_DisplayName,
+                "valueWeightRange",
+                config.valueWeightRange
+            );
+            config.qualityColor = ModConfigAPI.SafeLoad<string>(
+                Mod_DisplayName,
+                "qualityColor",
+                config.qualityColor
+            );
+            config.valueColor = ModConfigAPI.SafeLoad<string>(
+                Mod_DisplayName,
+                "valueColor",
+                config.valueColor
+            );
+            config.valueWeightColor = ModConfigAPI.SafeLoad<string>(
+                Mod_DisplayName,
+                "valueWeightColor",
+                config.valueWeightColor
+            );
         }
 
         [HarmonyPatch(typeof(Duckov.UI.LootView))]
@@ -244,7 +328,7 @@ namespace OneKeyLoot
                 InteractableLootbox
             >("targetLootBox");
 
-            private static readonly Color[] ButtonColorPalette =
+            private static readonly Color[] DefaultButtonColorPalette =
             [
                 UIConstants.Color2,
                 UIConstants.Color3,
@@ -252,12 +336,52 @@ namespace OneKeyLoot
                 UIConstants.Color5,
             ];
 
-            private static Color GetButtonColor(int ordinal) =>
-                ButtonColorPalette[ordinal % ButtonColorPalette.Length];
+            // ✅ 解析颜色 CSV：若任一 token 非法或最终为空 => 回退到默认调色板（最多取 4 个）
+            private static List<Color> ParseColorCsv(string csv, IReadOnlyList<Color> fallback)
+            {
+                const int MaxButtons = 4;
+                try
+                {
+                    if (string.IsNullOrWhiteSpace(csv))
+                    {
+                        return [.. fallback.Take(MaxButtons)];
+                    }
 
-            private static readonly Func<Item, int> s_MetricValue = static item =>
+                    var tokens = csv.Split([',', ';', ' '], StringSplitOptions.RemoveEmptyEntries);
+                    var list = new List<Color>(tokens.Length);
+                    bool invalid = false;
+                    foreach (var raw in tokens)
+                    {
+                        if (ColorUtility.TryParseHtmlString(raw.Trim(), out var c))
+                        {
+                            list.Add(c);
+                        }
+                        else
+                        {
+                            invalid = true;
+                            break;
+                        }
+                    }
+                    if (invalid || list.Count == 0)
+                    {
+                        return [.. fallback.Take(MaxButtons)];
+                    }
+                    return [.. list.Take(MaxButtons)];
+                }
+                catch
+                {
+                    return [.. fallback.Take(MaxButtons)];
+                }
+            }
+
+            private static Color GetButtonColor(IReadOnlyList<Color> palette, int ordinal) =>
+                palette[Mathf.Abs(ordinal) % Mathf.Max(1, palette.Count)];
+
+            private static readonly Func<Item, int> QualityChecker = static item => item.Quality;
+            private static readonly Func<Item, int> ValueChecker = static item =>
                 item.GetTotalRawValue() / 2;
-            private static readonly Func<Item, int> s_MetricQuality = static item => item.Quality;
+            private static readonly Func<Item, int> ValueWeightChecker = static item =>
+                (int)(ValueChecker(item) / item.SelfWeight);
 
             // CSV 解析：失败时回退到默认配置
             private static List<int> ParseRangeCsv(string csv, string fallbackCsv)
@@ -343,7 +467,7 @@ namespace OneKeyLoot
             private static void TryPickAllBy(
                 Duckov.UI.LootView lv,
                 int min,
-                Func<Item, int> metricSelector
+                Func<Item, int> itemChecker
             )
             {
                 AudioManager.Post("UI/confirm");
@@ -374,8 +498,10 @@ namespace OneKeyLoot
                         continue;
                     }
 
-                    int metric = metricSelector(it);
-                    if (!ItemWishlist.Instance.IsManuallyWishlisted(it.TypeID) && metric < min)
+                    if (
+                        !ItemWishlist.Instance.IsManuallyWishlisted(it.TypeID)
+                        && itemChecker(it) < min
+                    )
                     {
                         continue;
                     }
@@ -530,31 +656,71 @@ namespace OneKeyLoot
                 );
                 ApplyRefFont(vTitle, pickAll);
 
-                // 配置解析
+                // ValueWeight：Panel + Title + Row
+                var vwRow = FindOrCreateRect(
+                    parent,
+                    UIConstants.ValueWeightRowName,
+                    siblingAfter: vRow.transform
+                );
+                SetupRow(vwRow, baseH);
+                var vwRowLe =
+                    vwRow.GetComponent<LayoutElement>()
+                    ?? vwRow.gameObject.AddComponent<LayoutElement>();
+                vwRowLe.flexibleWidth = 0f;
+                vwRowLe.preferredWidth = baseW;
+
+                var vwPanel = FindOrCreateRect(
+                    parent,
+                    UIConstants.ValueWeightPanelName,
+                    siblingIndex: vwRow.GetSiblingIndex()
+                );
+                vwRow.SetSiblingIndex(vwPanel.GetSiblingIndex() + 1);
+                SetupPanel(vwPanel, pickAll.image, baseH);
+                var vwTitle = CreateOrUpdateTitleTMP(
+                    vwPanel.gameObject,
+                    UIConstants.ValueWeightTitleName,
+                    i18n.ValueWeight.Title
+                );
+                ApplyRefFont(vwTitle, pickAll);
+
+                var defaultPalette = DefaultButtonColorPalette;
+                // 解析配置范围
                 var cfg = RuntimeConfig;
                 var qualityList = ParseRangeCsv(
                     cfg.qualityRange,
                     DefaultConfig.Defaults.qualityRange
                 );
                 var valueList = ParseRangeCsv(cfg.valueRange, DefaultConfig.Defaults.valueRange);
+                var weightList = ParseRangeCsv(
+                    cfg.valueWeightRange,
+                    DefaultConfig.Defaults.valueWeightRange
+                );
+                var qColors = ParseColorCsv(cfg.qualityColor, defaultPalette);
+                var vColors = ParseColorCsv(cfg.valueColor, defaultPalette);
+                var vwColors = ParseColorCsv(cfg.valueWeightColor, defaultPalette);
 
+                // 清理旧按钮
                 PruneRowButtons(qRow, "OKL_Button_Quality_", [.. qualityList]);
                 PruneRowButtons(vRow, "OKL_Button_Value_", [.. valueList]);
+                PruneRowButtons(vwRow, "OKL_Button_ValueWeight_", [.. weightList]);
 
+                // 目标宽度
                 float spacing = UIConstants.ButtonRowSpacing;
                 float qTargetW = CalcTargetWidth(baseW, spacing, qualityList.Count);
                 float vTargetW = CalcTargetWidth(baseW, spacing, valueList.Count);
+                float vwTargetW = CalcTargetWidth(baseW, spacing, weightList.Count);
                 float targetH = baseH;
 
                 var refShadow = pickAll.GetComponent<Shadow>();
                 var refOutline = pickAll.GetComponent<Outline>();
 
+                // 质量按钮
                 for (int i = 0; i < qualityList.Count; i++)
                 {
                     int minQ = qualityList[i];
                     string name = $"OKL_Button_Quality_{minQ}";
-                    var color = GetButtonColor(i);
-                    CreateQualityButton(
+                    var color = GetButtonColor(qColors, i);
+                    CreateFilterButton(
                         qRow,
                         pickAll,
                         qTargetW,
@@ -565,16 +731,20 @@ namespace OneKeyLoot
                         refShadow,
                         refOutline,
                         lv,
-                        qRow
+                        QualityChecker,
+                        i18n.Quality.Button,
+                        i18n.Quality.ButtonFontSize,
+                        i
                     );
                 }
 
+                // 价值按钮
                 for (int i = 0; i < valueList.Count; i++)
                 {
                     int minV = valueList[i];
                     string name = $"OKL_Button_Value_{minV}";
-                    var color = GetButtonColor(i);
-                    CreateValueButton(
+                    var color = GetButtonColor(vColors, i);
+                    CreateFilterButton(
                         vRow,
                         pickAll,
                         vTargetW,
@@ -584,14 +754,45 @@ namespace OneKeyLoot
                         minV,
                         refShadow,
                         refOutline,
-                        lv
+                        lv,
+                        ValueChecker,
+                        i18n.Value.Button,
+                        i18n.Value.ButtonFontSize,
+                        i
                     );
                 }
 
+                // 价值权重按钮（价值/重量）
+                for (int i = 0; i < weightList.Count; i++)
+                {
+                    int minW = weightList[i];
+                    string name = $"OKL_Button_ValueWeight_{minW}";
+                    var color = GetButtonColor(vwColors, i);
+                    CreateFilterButton(
+                        vwRow,
+                        pickAll,
+                        vwTargetW,
+                        targetH,
+                        name,
+                        color,
+                        minW,
+                        refShadow,
+                        refOutline,
+                        lv,
+                        ValueWeightChecker,
+                        i18n.ValueWeight.Button,
+                        i18n.ValueWeight.ButtonFontSize,
+                        i
+                    );
+                }
+
+                // 显隐控制
                 qPanel.gameObject.SetActive(cfg.showQuality);
                 qRow.gameObject.SetActive(cfg.showQuality);
                 vPanel.gameObject.SetActive(cfg.showValue);
                 vRow.gameObject.SetActive(cfg.showValue);
+                vwPanel.gameObject.SetActive(cfg.showValueWeight);
+                vwRow.gameObject.SetActive(cfg.showValueWeight);
 
                 if (parent.Find("OKL_BottomSpacer") == null)
                 {
@@ -871,18 +1072,22 @@ namespace OneKeyLoot
                 return rt;
             }
 
-            private static void CreateQualityButton(
+            // 新增通用按钮创建：质量/价值/价值权重 共用
+            private static void CreateFilterButton(
                 RectTransform row,
                 Button pickAll,
                 float w,
                 float h,
                 string name,
                 Color bgcolor,
-                int minQuality,
+                int minThreshold,
                 Shadow refShadow,
                 Outline refOutline,
                 Duckov.UI.LootView lv,
-                RectTransform rowForContext
+                Func<Item, int> checker,
+                Func<int, string> labelBuilder,
+                int fontSize,
+                int siblingIndex
             )
             {
                 var child = row.Find(name) as RectTransform;
@@ -899,6 +1104,9 @@ namespace OneKeyLoot
                     go.name = name;
                     r = go.GetComponent<RectTransform>();
                 }
+                int maxIdx = Mathf.Max(0, row.childCount - 1);
+                // 保证按钮的兄弟顺序与排序后的列表索引一致
+                r.SetSiblingIndex(Mathf.Clamp(siblingIndex, 0, maxIdx));
 
                 var le = go.GetComponent<LayoutElement>() ?? go.AddComponent<LayoutElement>();
                 le.minWidth = w;
@@ -938,7 +1146,7 @@ namespace OneKeyLoot
                     btn.transition = Selectable.Transition.None;
 
                     btn.onClick.RemoveAllListeners();
-                    btn.onClick.AddListener(() => TryPickAllBy(lv, minQuality, s_MetricQuality));
+                    btn.onClick.AddListener(() => TryPickAllBy(lv, minThreshold, checker));
                 }
                 if (bg)
                 {
@@ -954,112 +1162,7 @@ namespace OneKeyLoot
                     EnsureDefaultShadow(go);
                 }
 
-                EnsureSingleCenteredLabel(
-                    go,
-                    i18n.Quality.Button(minQuality),
-                    pickAll,
-                    i18n.Quality.ButtonFontSize
-                );
-
-                foreach (var g in go.GetComponentsInChildren<Graphic>(true))
-                {
-                    if (g == bg)
-                    {
-                        continue;
-                    }
-                    g.raycastTarget = false;
-                }
-                go.SetActive(true);
-            }
-
-            private static void CreateValueButton(
-                RectTransform row,
-                Button pickAll,
-                float w,
-                float h,
-                string name,
-                Color bgcolor,
-                int minValue,
-                Shadow refShadow,
-                Outline refOutline,
-                Duckov.UI.LootView lv
-            )
-            {
-                var child = row.Find(name) as RectTransform;
-                GameObject go;
-                RectTransform r;
-                if (child)
-                {
-                    r = child;
-                    go = child.gameObject;
-                }
-                else
-                {
-                    go = UnityEngine.Object.Instantiate(pickAll.gameObject, row);
-                    go.name = name;
-                    r = go.GetComponent<RectTransform>();
-                }
-
-                var le = go.GetComponent<LayoutElement>() ?? go.AddComponent<LayoutElement>();
-                le.minWidth = w;
-                le.preferredWidth = w;
-                le.flexibleWidth = 0f;
-                le.minHeight = h;
-                le.preferredHeight = h;
-                le.flexibleHeight = 0f;
-
-                // 同步到 RectTransform，确保与 Layout 一致
-                r.SetSizeWithCurrentAnchors(RectTransform.Axis.Horizontal, w);
-                r.SetSizeWithCurrentAnchors(RectTransform.Axis.Vertical, h);
-
-                var btn = go.GetComponent<Button>();
-                var bg = btn ? btn.image : go.GetComponent<Image>();
-                if (bg)
-                {
-                    bg.material = null;
-                    var c = bg.color;
-                    c.a = 1f;
-                    bg.color = c;
-                    bg.CrossFadeAlpha(1f, 0f, true);
-                    bg.raycastTarget = true;
-                }
-                if (btn)
-                {
-                    var colors = btn.colors;
-                    colors.normalColor = Color.white;
-                    colors.highlightedColor = Color.white;
-                    colors.pressedColor = Color.white;
-                    colors.selectedColor = Color.white;
-                    colors.disabledColor = Color.white;
-                    btn.colors = colors;
-
-                    btn.interactable = false;
-                    btn.interactable = true;
-                    btn.transition = Selectable.Transition.None;
-
-                    btn.onClick.RemoveAllListeners();
-                    btn.onClick.AddListener(() => TryPickAllBy(lv, minValue, s_MetricValue));
-                }
-                if (bg)
-                {
-                    bg.color = bgcolor;
-                }
-
-                if (refShadow != null || refOutline != null)
-                {
-                    CopyShadowAndOutline(refShadow, refOutline, go);
-                }
-                else
-                {
-                    EnsureDefaultShadow(go);
-                }
-
-                EnsureSingleCenteredLabel(
-                    go,
-                    i18n.Value.Button(minValue),
-                    pickAll,
-                    i18n.Value.ButtonFontSize
-                );
+                EnsureSingleCenteredLabel(go, labelBuilder(minThreshold), pickAll, fontSize);
 
                 foreach (var g in go.GetComponentsInChildren<Graphic>(true))
                 {

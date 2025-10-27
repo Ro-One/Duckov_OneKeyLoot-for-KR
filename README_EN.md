@@ -11,10 +11,12 @@
 - Show the **[Collect All]** button
 - Add a **[One-key Loot (by Quality)]** button group
 - Add a **[One-key Loot (by Value)]** button group
+- Add a **[One-key Loot (by Value per unit Weight)]** button group
 - Support **hot switching between Chinese/English localization**
 - Support **hot switching of custom dynamic configuration**:
   - Show/Hide the [Collect All / One-key Loot] button or button groups
   - Customize the number of One-key Loot buttons
+  - Customize the color of One-key Loot buttons
   - Customize the One-key Loot range
 - Support **ModConfig（Optional）**  
   *<https://steamcommunity.com/sharedfiles/filedetails/?id=3590674339>*  
@@ -41,6 +43,12 @@
 - Conditional pickup, until inventory slots are full:
   - Item is marked with a **Heart (Favorite)**
   - Item’s store selling price is **≥ the minimum price threshold shown on the button**
+
+### [One-key Loot (by Value per unit Weight)]
+
+- Conditional pickup, until inventory slots are full:
+  - Item is marked with a **Heart (Favorite)**
+  - Item's total store selling price / Item's total weight is **≥ the minimum $/kg threshold shown on the button**
 
 ---
 
@@ -83,9 +91,21 @@
 - Represents 3 buttons: **Value ≥ 100**, **Value ≥ 500**, **Value ≥ 1000**
 - Each value is a store selling price threshold (usually half of an item’s normal value).
 
+### [Value/Weight Range]
+
+- **Default:** 500,2500,5000
+- Represents 3 buttons: **$/kg ≥ 500**, **$/kg ≥ 2500**, **$/kg ≥ 5000**
+- Each value is a Value per unit Weight threshold (the Weight includes all sub-items in the item slots).
+
+### [Button Group Color]
+
+- **Default:** #4CAF4F,#42A5F5,#BA68C6,#BF7F33
+- Represents 4 buttons: the colors are **#4CAF4F**, **#42A5F5**, **#BA68C6**, **#BF7F33**
+- Each color string must be in hexadecimal and begin with #. Opacity is supported (#4CAF4F is equivalent to #4CAF4FFF).
+
 ### Configuration Format Rules
 
-- [Quality Range] and [Value Range] each support **1~4** custom values
+- [Quality Range], [Value Range], [Value/Weight Range] and [Button Group Color] each support **1~4** custom values
 - Separate values with a half-width comma **,**
 - If the custom format is invalid, defaults will be used instead
 
