@@ -16,9 +16,18 @@ namespace OneKeyLoot
     /// - 保留缓存：标题、按钮格式、字号
     /// - 适配 Quality/Value 各自独立 Panel/Row/Title 名称，按钮文本扫描自节点名后缀
     /// </summary>
+    /// <summary>
+    /// 한국어 ver
+    /// i18n（언어 및 문안）
+    /// - fallback / try-catch를 포함하지 않음：모든 키 값이 반드시 존재한다고 가정
+    /// - LocalizationManager.OnSetLanguage를 사용해 언어 전환을 처리
+    /// - 캐시를 유지: 제목, 버튼 형식, 글자 크기
+    /// - Quality/Value 각각 독립된 Panel/Row/Title 이름에 맞게 적용, 버튼 텍스트는 노드 이름의 접미사에서 스캔
+    /// </summary>
     internal static class i18n
     {
         // ===== 组标识 =====
+        // ===== 그룹 식별자 =====
         public enum LootGroupId
         {
             Config,
@@ -28,6 +37,7 @@ namespace OneKeyLoot
         }
 
         // ===== 文案 Key =====
+        // ===== 텍스트 키 정의 =====
         public static class Keys
         {
             public static class Config
@@ -67,6 +77,7 @@ namespace OneKeyLoot
         }
 
         // ===== 字体与排版（简单对齐）=====
+        // ===== 글꼴 레이아웃 (간단 정렬) =====
         public static class Typography
         {
             public static readonly TextAlignmentOptions TitleAlign = TextAlignmentOptions.Midline;
@@ -74,6 +85,7 @@ namespace OneKeyLoot
         }
 
         // ===== 语言包：文本 + 元数据 =====
+        // ===== 언어팩 : 텍스트 + 메타데이터 =====
         private sealed class LanguagePack
         {
             public readonly Dictionary<string, string> Texts = new(StringComparer.Ordinal);
@@ -93,6 +105,7 @@ namespace OneKeyLoot
         }
 
         // ===== 内置语言包（根据需要可继续扩展）=====
+        // ===== 
         private static readonly LanguagePack PackEN = new LanguagePack()
             // Config
             .AddText(Keys.Config.ShowCollectAll, "Display [Collect All]")

@@ -4,7 +4,7 @@
     <LangVersion>latest</LangVersion>
     <EnableDefaultCompileItems>false</EnableDefaultCompileItems>
     <!-- 游戏根目录 -->
-    <GameDir>D:\Program Files (x86)\Steam\steamapps\common\Escape from Duckov\</GameDir>
+    <GameDir>D:\SteamLibrary\steamapps\common\Escape from Duckov\</GameDir>
   </PropertyGroup>
   <ItemGroup>
     <Reference Include="TeamSoda.Duckov.Core">
