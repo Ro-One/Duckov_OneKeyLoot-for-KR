@@ -1,0 +1,20 @@
+# EditorConfig is awesome: https://EditorConfig.org
+
+# top-most EditorConfig file
+root = true
+
+[*]
+indent_style = space
+indent_size = 4
+end_of_line = crlf
+charset = utf-8
+trim_trailing_whitespace = false
+insert_final_newline = false
+
+[*.cs]
+csharp_prefer_braces = true:warning
+dotnet_diagnostic.IDE0011.severity = warning
+# IDE0130: 命名空间与文件夹结构不匹配
+dotnet_style_namespace_match_folder = false
+# IDE1006: 命名样式
+dotnet_diagnostic.IDE1006.severity = none

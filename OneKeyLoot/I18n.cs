@@ -1,7 +1,5 @@
 using System;
-using System.Collections;
 using System.Collections.Generic;
-using System.Linq;
 using Duckov.UI;
 using SodaCraft.Localizations;
 using TMPro;
@@ -9,13 +7,6 @@ using UnityEngine;
 
 namespace OneKeyLoot
 {
-    /// <summary>
-    /// i18n（语言与文案）
-    /// - 不包含 fallback / try-catch：假定所有键值必定存在
-    /// - 使用 LocalizationManager.OnSetLanguage 驱动语言切换
-    /// - 保留缓存：标题、按钮格式、字号
-    /// - 适配 Quality/Value 各自独立 Panel/Row/Title 名称，按钮文本扫描自节点名后缀
-    /// </summary>
     internal static class i18n
     {
         // ===== 组标识 =====
@@ -92,7 +83,7 @@ namespace OneKeyLoot
             }
         }
 
-        // ===== 内置语言包（根据需要可继续扩展）=====
+        // ===== 内置语言包 =====
         private static readonly LanguagePack PackEN = new LanguagePack()
             // Config
             .AddText(Keys.Config.ShowCollectAll, "Display [Collect All]")
@@ -148,7 +139,7 @@ namespace OneKeyLoot
 
         private static LanguagePack s_CurrentPack = PackEN;
 
-        // ===== 组配置（UI 寻址、命名约定）=====
+        // ===== 组配置 =====
         private sealed class ButtonGroupConfig(
             LootGroupId id,
             string titleKey,
@@ -279,11 +270,10 @@ namespace OneKeyLoot
         // ===== 生命周期 =====
         public static void Init()
         {
-            // 先确保不会重复订阅
+            // 确保不会重复订阅
             LocalizationManager.OnSetLanguage -= OnSetLanguage;
             LocalizationManager.OnSetLanguage += OnSetLanguage;
 
-            // 立刻构建 s_Config / s_GroupCaches，避免同帧读取空引用
             OnSetLanguage(LocalizationManager.CurrentLanguage);
         }
 
@@ -294,7 +284,7 @@ namespace OneKeyLoot
 
         private static void OnSetLanguage(SystemLanguage lang)
         {
-            // 简体/繁体 → 中文包；其余 → 英文包
+            // 简体/繁体 → 中文；其余 → 英文
             s_CurrentPack =
                 (
                     lang == SystemLanguage.ChineseSimplified
@@ -305,7 +295,9 @@ namespace OneKeyLoot
 
             // 推送覆盖文本给全局（仅 Texts；Meta 仅内部使用）
             foreach (var kv in s_CurrentPack.Texts)
+            {
                 LocalizationManager.SetOverrideText(kv.Key, kv.Value);
+            }
 
             // 重建组缓存（键必定存在）
             s_GroupCaches.Clear();
@@ -346,16 +338,20 @@ namespace OneKeyLoot
             {
                 var rt = lv ? lv.GetComponent<RectTransform>() : null;
                 if (!rt)
+                {
                     continue;
+                }
 
                 foreach (var g in s_Groups)
+                {
                     UpdateGroupUI(rt, g);
+                }
             }
         }
 
         private static void UpdateGroupUI(RectTransform root, ButtonGroupConfig g)
         {
-            var cache = s_GroupCaches[g.Id]; // 无 fallback：直接索引
+            var cache = s_GroupCaches[g.Id];
 
             // 标题
             var titleRt = root.Find(g.TitleNodeName) as RectTransform;
@@ -365,7 +361,10 @@ namespace OneKeyLoot
                     titleRt.GetComponent<TextMeshProUGUI>()
                     ?? titleRt.gameObject.AddComponent<TextMeshProUGUI>();
                 if (TMP_Settings.defaultFontAsset != null && tmp.font == null)
+                {
                     tmp.font = TMP_Settings.defaultFontAsset;
+                }
+
                 tmp.text = cache.Title;
                 tmp.alignment = Typography.TitleAlign;
                 tmp.fontSize = cache.FontSize;
@@ -374,7 +373,9 @@ namespace OneKeyLoot
             // 行内按钮
             var row = root.Find(g.RowName) as RectTransform;
             if (!row)
+            {
                 return;
+            }
 
             string prefix = g.ButtonNamePattern.Replace("{0}", string.Empty);
 
@@ -382,25 +383,35 @@ namespace OneKeyLoot
             {
                 var child = row.GetChild(i);
                 if (!child)
+                {
                     continue;
+                }
 
                 var name = child.name ?? string.Empty;
                 if (!name.StartsWith(prefix, StringComparison.Ordinal))
+                {
                     continue;
+                }
 
                 // 解析阈值
                 if (!int.TryParse(name.Substring(prefix.Length), out var v))
+                {
                     continue;
+                }
 
                 var label = child.Find(UIConstants.LabelName) as RectTransform;
                 if (!label)
+                {
                     continue;
+                }
 
                 var tmp =
                     label.GetComponent<TextMeshProUGUI>()
                     ?? label.gameObject.AddComponent<TextMeshProUGUI>();
                 if (TMP_Settings.defaultFontAsset != null && tmp.font == null)
+                {
                     tmp.font = TMP_Settings.defaultFontAsset;
+                }
 
                 tmp.text = cache.Format(v);
                 tmp.alignment = Typography.ButtonAlign;

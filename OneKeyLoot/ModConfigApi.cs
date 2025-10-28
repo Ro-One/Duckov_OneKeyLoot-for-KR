@@ -33,7 +33,9 @@ namespace OneKeyLoot
         private static bool CheckVersionCompatibility()
         {
             if (versionChecked)
+            {
                 return isVersionCompatible;
+            }
 
             try
             {
@@ -46,7 +48,7 @@ namespace OneKeyLoot
                 if (versionField != null && versionField.FieldType == typeof(int))
                 {
                     int modConfigVersion = (int)versionField.GetValue(null);
-                    isVersionCompatible = (modConfigVersion == ModConfigVersion);
+                    isVersionCompatible = modConfigVersion == ModConfigVersion;
 
                     if (!isVersionCompatible)
                     {
@@ -88,7 +90,9 @@ namespace OneKeyLoot
             try
             {
                 if (isInitialized)
+                {
                     return true;
+                }
 
                 // 获取 ModBehaviour 类型
                 // Get ModBehaviour type
@@ -217,7 +221,9 @@ namespace OneKeyLoot
         public static bool SafeAddOnOptionsChangedDelegate(Action<string> action)
         {
             if (!Initialize())
+            {
                 return false;
+            }
 
             if (action == null)
             {
@@ -252,7 +258,9 @@ namespace OneKeyLoot
         public static bool SafeRemoveOnOptionsChangedDelegate(Action<string> action)
         {
             if (!Initialize())
+            {
                 return false;
+            }
 
             if (action == null)
             {
@@ -294,7 +302,9 @@ namespace OneKeyLoot
             key = $"{modName}_{key}";
 
             if (!Initialize())
+            {
                 return false;
+            }
 
             try
             {
@@ -333,7 +343,9 @@ namespace OneKeyLoot
             key = $"{modName}_{key}";
 
             if (!Initialize())
+            {
                 return false;
+            }
 
             try
             {
@@ -382,7 +394,9 @@ namespace OneKeyLoot
             key = $"{modName}_{key}";
 
             if (!Initialize())
+            {
                 return false;
+            }
 
             try
             {
@@ -415,7 +429,9 @@ namespace OneKeyLoot
             key = $"{mod_name}_{key}";
 
             if (!Initialize())
+            {
                 return defaultValue;
+            }
 
             if (string.IsNullOrEmpty(key))
             {
@@ -462,7 +478,9 @@ namespace OneKeyLoot
             key = $"{mod_name}_{key}";
 
             if (!Initialize())
+            {
                 return false;
+            }
 
             if (string.IsNullOrEmpty(key))
             {
@@ -512,7 +530,9 @@ namespace OneKeyLoot
         public static string GetVersionInfo()
         {
             if (!Initialize())
+            {
                 return "ModConfig 未加载 | ModConfig not loaded";
+            }
 
             try
             {
@@ -555,7 +575,10 @@ namespace OneKeyLoot
         public static bool IsVersionCompatible()
         {
             if (!Initialize())
+            {
                 return false;
+            }
+
             return isVersionCompatible;
         }
     }
