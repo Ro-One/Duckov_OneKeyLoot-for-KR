@@ -410,6 +410,7 @@ namespace OneKeyLoot
                     if (string.IsNullOrWhiteSpace(range))
                     {
                         return [.. fallback.Take(MaxButtons)];
+                        Debug.Log("[OneKeyLoot]: quality color range is empty, using fallback");
                     }
 
                     var tokens = range.Split([',', ';', ' '], StringSplitOptions.RemoveEmptyEntries);
@@ -420,6 +421,7 @@ namespace OneKeyLoot
                         if (int.TryParse(raw.Trim(), out var v))
                         {
                             list.Add(AutoQualityColorPalette[v]);
+                            Debug.Log($"[OneKeyLoot]: quality color for range {v} parsed");
                         }
                         else
                         {
@@ -430,12 +432,15 @@ namespace OneKeyLoot
                     if (invalid || list.Count == 0)
                     {
                         return [.. fallback.Take(MaxButtons)];
+                        Debug.Log("[OneKeyLoot]: quality color range invalid, using fallback");
                     }
                     return [.. list.Take(MaxButtons)];
+                    Debug.Log("[OneKeyLoot]: quality color range parsed successfully");
                 }
                 catch
                 {
                     return [.. fallback.Take(MaxButtons)];
+                    Debug.Log("[OneKeyLoot]: quality color range parse exception, using fallback");
                 }
             }
 
@@ -770,8 +775,7 @@ namespace OneKeyLoot
                     cfg.valueWeightRange,
                     DefaultConfig.Defaults.valueWeightRange
                 );
-
-                List<Color> qColors;
+                var qColors = new List<Color>();
                 if (cfg.autoChangeQualityColor)
                 {
                     qColors = ParseQualityColorCsvByRange(
