@@ -28,13 +28,13 @@ namespace OneKeyLoot
             return new Color(0.30f, 0.69f, 0.31f, 1f);
         }
 
-        public static readonly Color Color0 = Hex("#FFFFFF00"); // ≥0 하양
-        public static readonly Color Color1 = Hex("#7cff7c40"); // ≥1 연두
-        public static readonly Color Color2 = Hex("#7cd5ff10"); // ≥2 하늘
-        public static readonly Color Color3 = Hex("#d0acff10"); // ≥3 연보라
-        public static readonly Color Color4 = Hex("#ffdc2496"); // ≥4 노랑
-        public static readonly Color Color5 = Hex("#ff585896"); // ≥5 다홍
-        public static readonly Color Color6 = Hex("#bb000096"); // ≥6 빨강
+        public static readonly Color Color0 = Hex("#FFFFFF"); // ≥0 하양
+        public static readonly Color Color1 = Hex("#7cff7c"); // ≥1 연두
+        public static readonly Color Color2 = Hex("#7cd5ff"); // ≥2 하늘
+        public static readonly Color Color3 = Hex("#d0acff"); // ≥3 연보라
+        public static readonly Color Color4 = Hex("#ffdc24"); // ≥4 노랑
+        public static readonly Color Color5 = Hex("#ff5858"); // ≥5 주황
+        public static readonly Color Color6 = Hex("#bb0000"); // ≥6 빨강
         public const string LabelName = "OKL_Label";
         public const float ButtonRowSpacing = 8f;
         public const float BottomSpacerHeight = 16f;
@@ -62,6 +62,7 @@ namespace OneKeyLoot
         public bool showQuality = true;
         public bool showValue = true;
         public bool showValueWeight = true;
+        public bool autoChangeQualityColor = false;
         public string qualityRange = "2,3,4,5";
         public string valueRange = "100,500,1000";
         public string valueWeightRange = "500,2500,5000";
@@ -136,6 +137,7 @@ namespace OneKeyLoot
             s_RuntimeConfig.showQuality = src.showQuality;
             s_RuntimeConfig.showValue = src.showValue;
             s_RuntimeConfig.showValueWeight = src.showValueWeight;
+            s_RuntimeConfig.autoChangeQualityColor = src.autoChangeQualityColor;
             s_RuntimeConfig.qualityRange = src.qualityRange;
             s_RuntimeConfig.valueRange = src.valueRange;
             s_RuntimeConfig.valueWeightRange = src.valueWeightRange;
@@ -225,6 +227,12 @@ namespace OneKeyLoot
                 config.qualityColor,
                 null
             );
+            ModConfigAPI.SafeAddBoolDropdownList(
+                Mod_DisplayName,
+                "AutoChangeQualityColorLabel",
+                i18n.Config.AutoChangeQualityColorLabel,
+                config.showValue
+            );
             ModConfigAPI.SafeAddInputWithSlider(
                 Mod_DisplayName,
                 "qualityRange",
@@ -301,6 +309,11 @@ namespace OneKeyLoot
                 "valueWeightRange",
                 config.valueWeightRange
             );
+            config.autoChangeQualityColor = ModConfigAPI.SafeLoad<bool>(
+                Mod_DisplayName,
+                "autoChangeQualityColor",
+                config.autoChangeQualityColor
+            );
             config.qualityColor = ModConfigAPI.SafeLoad<string>(
                 Mod_DisplayName,
                 "qualityColor",
@@ -334,25 +347,35 @@ namespace OneKeyLoot
 
             private static readonly Color[] DefaultButtonColorPalette =
             [
+                UIConstants.Color1,
+                UIConstants.Color2,
+                UIConstants.Color3,
+                UIConstants.Color4,
+            ];
+            private static readonly Color[] AutoQualityColorPalette =
+            [
+                UIConstants.Color0,
+                UIConstants.Color1,
                 UIConstants.Color2,
                 UIConstants.Color3,
                 UIConstants.Color4,
                 UIConstants.Color5,
+                UIConstants.Color6,
             ];
 
             // ✅ 解析颜色 CSV：若任一 token 非法或最终为空 => 回退到默认调色板（最多取 4 个）
             // ✅ 색상 CSV 구문 분석: 토큰이 잘못되었거나 최종적으로 비어 있는 경우 => 기본 팔레트로 돌아가기(최대 4개 가져오기)
-            private static List<Color> ParseColorCsv(string csv, IReadOnlyList<Color> fallback)
+            private static List<Color> ParseColorCsv(string scv, IReadOnlyList<Color> fallback)
             {
                 const int MaxButtons = 4;
                 try
                 {
-                    if (string.IsNullOrWhiteSpace(csv))
+                    if (string.IsNullOrWhiteSpace(scv))
                     {
                         return [.. fallback.Take(MaxButtons)];
                     }
 
-                    var tokens = csv.Split([',', ';', ' '], StringSplitOptions.RemoveEmptyEntries);
+                    var tokens = scv.Split([',', ';', ' '], StringSplitOptions.RemoveEmptyEntries);
                     var list = new List<Color>(tokens.Length);
                     bool invalid = false;
                     foreach (var raw in tokens)
@@ -360,6 +383,43 @@ namespace OneKeyLoot
                         if (ColorUtility.TryParseHtmlString(raw.Trim(), out var c))
                         {
                             list.Add(c);
+                        }
+                        else
+                        {
+                            invalid = true;
+                            break;
+                        }
+                    }
+                    if (invalid || list.Count == 0)
+                    {
+                        return [.. fallback.Take(MaxButtons)];
+                    }
+                    return [.. list.Take(MaxButtons)];
+                }
+                catch
+                {
+                    return [.. fallback.Take(MaxButtons)];
+                }
+            }
+
+            private static List<Color> ParseQualityColorCsvByRange(string range, IReadOnlyList<Color> fallback)
+            {
+                const int MaxButtons = 4;
+                try
+                {
+                    if (string.IsNullOrWhiteSpace(range))
+                    {
+                        return [.. fallback.Take(MaxButtons)];
+                    }
+
+                    var tokens = range.Split([',', ';', ' '], StringSplitOptions.RemoveEmptyEntries);
+                    var list = new List<Color>(tokens.Length);
+                    bool invalid = false;
+                    foreach (var raw in tokens)
+                    {
+                        if (int.TryParse(raw.Trim(), out var v))
+                        {
+                            list.Add(AutoQualityColorPalette[v]);
                         }
                         else
                         {
@@ -457,7 +517,7 @@ namespace OneKeyLoot
                     }
 
                     // 从名字解析数值后缀；解析失败也视为应清理的旧节点
-                    // 이름에서 숫자 접미사 구문 분석; 구문 분석 실패도 정리해야 하는 이전 노드로 간주됩니다.
+                    // 이름에서 숫자 접미사 구문 분석; 구문 분석 실패도 정리해야 하는 이전 노드로 간주
                     var suffix = name.Substring(prefix.Length);
                     if (!int.TryParse(suffix, out var v) || !keepSet.Contains(v))
                     {
@@ -702,14 +762,29 @@ namespace OneKeyLoot
                     cfg.qualityRange,
                     DefaultConfig.Defaults.qualityRange
                 );
-                var valueList = ParseRangeCsv(cfg.valueRange, DefaultConfig.Defaults.valueRange);
+                var valueList = ParseRangeCsv(
+                    cfg.valueRange,
+                    DefaultConfig.Defaults.valueRange
+                );
                 var weightList = ParseRangeCsv(
                     cfg.valueWeightRange,
                     DefaultConfig.Defaults.valueWeightRange
                 );
-                var qColors = ParseColorCsv(cfg.qualityColor, defaultPalette);
-                var vColors = ParseColorCsv(cfg.valueColor, defaultPalette);
-                var vwColors = ParseColorCsv(cfg.valueWeightColor, defaultPalette);
+
+                List<Color> qColors;
+                if (cfg.autoChangeQualityColor)
+                {
+                    qColors = ParseQualityColorCsvByRange(
+                        cfg.qualityRange,
+                        defaultPalette
+                    );
+                }
+                else
+                {
+                    qColors = ParseColorCsv(cfg.qualityColor, defaultPalette);
+                }
+                List<Color> vColors = ParseColorCsv(cfg.valueColor, defaultPalette);
+                List<Color> vwColors = ParseColorCsv(cfg.valueWeightColor, defaultPalette);
 
                 // 清理旧按钮
                 // 이전 버튼 정리

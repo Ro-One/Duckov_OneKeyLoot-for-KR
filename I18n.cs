@@ -17,7 +17,7 @@ namespace OneKeyLoot
     /// - 适配 Quality/Value 各自独立 Panel/Row/Title 名称，按钮文本扫描自节点名后缀
     /// </summary>
     /// <summary>
-    /// i18n（언어 및 문안）한국어 주석. ver
+    /// i18n（언어 및 문안）한국어 주석 ver.
     /// - fallback / try-catch를 포함하지 않음：모든 키 값이 반드시 존재한다고 가정
     /// - LocalizationManager.OnSetLanguage를 사용해 언어 전환을 처리
     /// - 캐시를 유지: 제목, 버튼 형식, 글자 크기
@@ -48,6 +48,7 @@ namespace OneKeyLoot
                 public const string QualityRange = "OKL.Config_QualityRange";
                 public const string ValueRange = "OKL.Config_ValueRange";
                 public const string ValueWeightRange = "OKL.Config_ValueWeightRange";
+                public const string AutoChangeQualityColor = "OKL.Config_AutoChangeQualityColor";
                 public const string QualityColor = "OKL.Config_QualityColor";
                 public const string ValueColor = "OKL.Config_ValueColor";
                 public const string ValueWeightColor = "OKL.Config_ValueWeightColor";
@@ -56,22 +57,22 @@ namespace OneKeyLoot
             public static class Quality
             {
                 public const string Title = "OKL.Quality_Title";
-                public const string ButtonText = "OKL.Quality_ButtonText"; // 需要占位符 ≥{0}
-                public const string ButtonFontSize = "OKL.Quality_ButtonFontSize"; // 元数据：字号（数字）
+                public const string ButtonText = "OKL.Quality_ButtonText"; // 需要占位符 ≥{0} // 자리 표시자 필요 ≥{0}
+                public const string ButtonFontSize = "OKL.Quality_ButtonFontSize"; // 元数据：字号（数字）// 메타데이터: 글자 크기 (숫자)
             }
 
             public static class Value
             {
                 public const string Title = "OKL.Value_Title";
-                public const string ButtonText = "OKL.Value_ButtonText"; // 需要占位符 ≥{0}
-                public const string ButtonFontSize = "OKL.Value_ButtonFontSize"; // 元数据：字号（数字）
+                public const string ButtonText = "OKL.Value_ButtonText"; // 需要占位符 ≥{0} // 자리 표시자 필요 ≥{0}
+                public const string ButtonFontSize = "OKL.Value_ButtonFontSize"; // 元数据：字号（数字） // 메타데이터: 글자 크기 (숫자)
             }
 
             public static class ValueWeight
             {
                 public const string Title = "OKL.ValueWeight_Title";
-                public const string ButtonText = "OKL.ValueWeight_ButtonText"; // 需要占位符 ≥{0}
-                public const string ButtonFontSize = "OKL.ValueWeight_ButtonFontSize"; // 元数据：字号（数字）
+                public const string ButtonText = "OKL.ValueWeight_ButtonText"; // 需要占位符 ≥{0} // 자리 표시자 필요 ≥{0}
+                public const string ButtonFontSize = "OKL.ValueWeight_ButtonFontSize"; // 元数据：字号（数字） // 메타데이터: 글자 크기 (숫자)
             }
         }
 
@@ -117,6 +118,7 @@ namespace OneKeyLoot
             .AddText(Keys.Config.QualityRange, "Quality Range (1~9)")
             .AddText(Keys.Config.ValueRange, "Value Range (1+)")
             .AddText(Keys.Config.ValueWeightRange, "Value/Weight Range (1+)")
+            .AddText(Keys.Config.AutoChangeQualityColor, "Automatically Change Quality ButtonGroup Color")   
             .AddText(Keys.Config.QualityColor, "Quality ButtonGroup Color")
             .AddText(Keys.Config.ValueColor, "Value ButtonGroup Color")
             .AddText(Keys.Config.ValueWeightColor, "Value/Weight ButtonGroup Color")
@@ -142,6 +144,7 @@ namespace OneKeyLoot
             .AddText(Keys.Config.ValueRange, "价值范围（1+）")
             .AddText(Keys.Config.ShowValueWeight, "显示【一键收集战利品（按价重比）】")
             .AddText(Keys.Config.ValueWeightRange, "价重比范围 (1+)")
+            .AddText(Keys.Config.AutoChangeQualityColor, "自动更改品质按钮组颜色")
             .AddText(Keys.Config.QualityColor, "品质按钮组颜色")
             .AddText(Keys.Config.ValueColor, "价值按钮组颜色")
             .AddText(Keys.Config.ValueWeightColor, "价重比按钮组颜色")
@@ -165,11 +168,12 @@ namespace OneKeyLoot
             .AddText(Keys.Config.QualityRange, "희귀도 범위 (1~9)")
             .AddText(Keys.Config.ShowValue, "【가치 기준 일괄 수집】 표시")
             .AddText(Keys.Config.ValueRange, "가치 범위 (1 이상)")
-            .AddText(Keys.Config.ShowValueWeight, "【가치 대비 무게 기준 일괄 수집】 표시")
-            .AddText(Keys.Config.ValueWeightRange, "가치 대비 무게 범위 (1 이상)")
+            .AddText(Keys.Config.ShowValueWeight, "【무게 대비 가치 기준 일괄 수집】 표시")
+            .AddText(Keys.Config.ValueWeightRange, "무게 대비 가치 범위 (1 이상)")
+            .AddText(Keys.Config.AutoChangeQualityColor, "희귀도 버튼 색상 자동 변경")
             .AddText(Keys.Config.QualityColor, "희귀도 버튼 색상")
             .AddText(Keys.Config.ValueColor, "가치 버튼 색상")
-            .AddText(Keys.Config.ValueWeightColor, "가치 대비 무게 버튼 색상")
+            .AddText(Keys.Config.ValueWeightColor, "무게 대비 가치 버튼 색상")
             // Quality
             .AddText(Keys.Quality.Title, "희귀도 기준 일괄 수집")
             .AddText(Keys.Quality.ButtonText, "희귀도≥{0}")
@@ -179,8 +183,8 @@ namespace OneKeyLoot
             .AddText(Keys.Value.ButtonText, "가치≥{0}")
             .AddMeta(Keys.Value.ButtonFontSize, 24)
             // Value/Weight
-            .AddText(Keys.ValueWeight.Title, "가치 대비 무게 기준 일괄 수집")
-            .AddText(Keys.ValueWeight.ButtonText, "가치 대비 무게≥{0}")
+            .AddText(Keys.ValueWeight.Title, "무게 대비 가치 기준 일괄 수집")
+            .AddText(Keys.ValueWeight.ButtonText, "무게 대비 가치≥{0}")
             .AddMeta(Keys.ValueWeight.ButtonFontSize, 20);
 
 
@@ -245,7 +249,7 @@ namespace OneKeyLoot
         ];
 
         // ===== 每组缓存（避免频繁查字典/装箱）=====
-        // ===== 각 그룹 캐시 (많은 딕셔너리 조회/박싱 방지)
+        // ===== 각 그룹 캐시 (잦은 딕셔너리 조회/박싱 방지)
         private sealed class GroupCache
         {
             public string Title;
@@ -268,6 +272,7 @@ namespace OneKeyLoot
             public string QualityRangeLabel;
             public string ValueRangeLabel;
             public string ValueWeightRangeLabel;
+            public string AutoChangeQualityColorLabel;
             public string QualityColorLabel;
             public string ValueColorLabel;
             public string ValueWeightColorLabel;
@@ -276,7 +281,7 @@ namespace OneKeyLoot
         private static ConfigCache s_Config;
 
         // ===== 外部访问：Config 与两个分组 =====
-        // ===== 외부접근 : Config 및 2개 그룹
+        // ===== 외부접근 : Config 및 3개 그룹
         public static class Config
         {
             public static string ShowCollectAllLabel => s_Config.ShowCollectAllLabel;
@@ -286,6 +291,7 @@ namespace OneKeyLoot
             public static string QualityRangeLabel => s_Config.QualityRangeLabel;
             public static string ValueRangeLabel => s_Config.ValueRangeLabel;
             public static string ValueWeightRangeLabel => s_Config.ValueWeightRangeLabel;
+            public static string AutoChangeQualityColorLabel => s_Config.AutoChangeQualityColorLabel;
             public static string QualityColorLabel => s_Config.QualityColorLabel;
             public static string ValueColorLabel => s_Config.ValueColorLabel;
             public static string ValueWeightColorLabel => s_Config.ValueWeightColorLabel;
@@ -340,14 +346,21 @@ namespace OneKeyLoot
         private static void OnSetLanguage(SystemLanguage lang)
         {
             // 简体/繁体 → 中文包；其余 → 英文包
-            // 간체/번체 -> 중국어팩; 그외 -> 영어팩
-            s_CurrentPack =
-                (
-                    lang == SystemLanguage.ChineseSimplified
-                    || lang == SystemLanguage.ChineseTraditional
-                )
-                    ? PackZH
-                    : PackEN;
+            // chinese simplified/traditional -> Chinese pack; others -> English pack
+            // 간체/번체 -> 중국어팩; 한국어 -> 한국어 팩; 그외 -> 영어팩
+            if (lang == SystemLanguage.ChineseSimplified || lang == SystemLanguage.ChineseTraditional)
+            {
+                s_CurrentPack = PackZH;
+            }
+            else if (lang == SystemLanguage.Korean)
+            {
+                s_CurrentPack = PackKR;
+            }
+            else
+            {
+                s_CurrentPack = PackEN;
+            }
+
 
             // 推送覆盖文本给全局（仅 Texts；Meta 仅内部使用）
             // 텍스트 전역 덮어쓰기 (Texts만 해당; Meta는 내부 전용)
@@ -378,6 +391,7 @@ namespace OneKeyLoot
                 QualityRangeLabel = s_CurrentPack.Texts[Keys.Config.QualityRange],
                 ValueRangeLabel = s_CurrentPack.Texts[Keys.Config.ValueRange],
                 ValueWeightRangeLabel = s_CurrentPack.Texts[Keys.Config.ValueWeightRange],
+                AutoChangeQualityColorLabel = s_CurrentPack.Texts[Keys.Config.AutoChangeQualityColor],
                 QualityColorLabel = s_CurrentPack.Texts[Keys.Config.QualityColor],
                 ValueColorLabel = s_CurrentPack.Texts[Keys.Config.ValueColor],
                 ValueWeightColorLabel = s_CurrentPack.Texts[Keys.Config.ValueWeightColor],
