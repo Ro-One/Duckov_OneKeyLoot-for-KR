@@ -131,20 +131,8 @@ namespace OneKeyLoot
 
             Debug.Log($"[OneKeyLoot]: ReapplyFromConfig Start");
 
-            s_cache.TryGetValue(parent, out var ce);
-            var root = ce?.Root;
-            if (!root)
-            {
-                Debug.LogWarning("[OneKeyLoot]: ReapplyFromConfig - root missing, recreating");
-                root = CreateRootNode(parent, pickAll.transform);
-                s_cache[parent] = new CacheEntry
-                {
-                    LvRef = new WeakReference<LootView>(lv),
-                    Parent = parent,
-                    Root = root,
-                    PickAll = pickAll,
-                };
-            }
+            var root = LookupRoot(lv, parent, pickAll);
+
             // —— 计算基准宽高 ——
             var lePick =
                 pickAll.GetComponent<LayoutElement>()
@@ -527,6 +515,28 @@ namespace OneKeyLoot
                 root.gameObject.SetActive(show);
             }
         }
+
+        // 根据parent创建并缓存根节点
+        // 所有UI元素全部挂载在根节点下，方便一键控制
+        private static RectTransform LookupRoot(LootView lv, RectTransform parent, Button pickAll)
+        {
+            if (s_cache.TryGetValue(parent, out var entry))
+            {
+                return entry.Root;
+            }
+            Debug.Log($"[OneKeyLoot]: Creating new root node for LootView");
+            var root = CreateRootNode(parent, pickAll.transform);
+            s_cache.Clear();
+            s_cache[parent] = new CacheEntry
+            {
+                LvRef = new WeakReference<LootView>(lv),
+                Parent = parent,
+                Root = root,
+                PickAll = pickAll,
+            };
+            return root;
+        }
+
 #pragma warning disable IDE0051
         /// <summary>
         /// 控制战利品界面所有按钮显隐
@@ -597,17 +607,6 @@ namespace OneKeyLoot
             {
                 return;
             }
-
-            // 根据parent创建并缓存根节点
-            // 所有UI元素全部挂载在根节点下，方便一键控制
-            var root = CreateRootNode(parent, pickAll.transform);
-            s_cache[parent] = new CacheEntry
-            {
-                LvRef = new WeakReference<LootView>(lv),
-                Parent = parent,
-                Root = root,
-                PickAll = pickAll,
-            };
 
             ReapplyFromConfig(lv, parent, pickAll);
 
