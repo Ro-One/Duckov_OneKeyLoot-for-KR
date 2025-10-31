@@ -409,8 +409,8 @@ namespace OneKeyLoot
                 {
                     if (string.IsNullOrWhiteSpace(range))
                     {
-                        return [.. fallback.Take(MaxButtons)];
                         Debug.Log("[OneKeyLoot]: quality color range is empty, using fallback");
+                        return [.. fallback.Take(MaxButtons)];
                     }
 
                     var tokens = range.Split([',', ';', ' '], StringSplitOptions.RemoveEmptyEntries);
@@ -431,16 +431,16 @@ namespace OneKeyLoot
                     }
                     if (invalid || list.Count == 0)
                     {
-                        return [.. fallback.Take(MaxButtons)];
                         Debug.Log("[OneKeyLoot]: quality color range invalid, using fallback");
+                        return [.. fallback.Take(MaxButtons)];
                     }
-                    return [.. list.Take(MaxButtons)];
                     Debug.Log("[OneKeyLoot]: quality color range parsed successfully");
+                    return [.. list.Take(MaxButtons)];
                 }
                 catch
                 {
-                    return [.. fallback.Take(MaxButtons)];
                     Debug.Log("[OneKeyLoot]: quality color range parse exception, using fallback");
+                    return [.. fallback.Take(MaxButtons)];
                 }
             }
 
