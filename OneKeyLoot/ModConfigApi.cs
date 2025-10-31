@@ -125,13 +125,13 @@ namespace OneKeyLoot
                 // 检查必要的静态方法是否存在
                 // Check if necessary static methods exist
                 string[] requiredMethods =
-                {
+                [
                     "AddDropdownList",
                     "AddInputWithSlider",
                     "AddBoolDropdownList",
                     "AddOnOptionsChangedDelegate",
                     "RemoveOnOptionsChangedDelegate",
-                };
+                ];
 
                 foreach (string methodName in requiredMethods)
                 {
@@ -237,7 +237,7 @@ namespace OneKeyLoot
                     "AddOnOptionsChangedDelegate",
                     BindingFlags.Public | BindingFlags.Static
                 );
-                method.Invoke(null, new object[] { action });
+                method.Invoke(null, [action]);
 
                 Debug.Log($"[{TAG}] 成功添加选项变更事件委托");
                 return true;
@@ -274,7 +274,7 @@ namespace OneKeyLoot
                     "RemoveOnOptionsChangedDelegate",
                     BindingFlags.Public | BindingFlags.Static
                 );
-                method.Invoke(null, new object[] { action });
+                method.Invoke(null, [action]);
 
                 Debug.Log($"[{TAG}] 成功移除选项变更事件委托");
                 return true;
@@ -312,10 +312,7 @@ namespace OneKeyLoot
                     "AddDropdownList",
                     BindingFlags.Public | BindingFlags.Static
                 );
-                method.Invoke(
-                    null,
-                    new object[] { modName, key, description, options, valueType, defaultValue }
-                );
+                method.Invoke(null, [modName, key, description, options, valueType, defaultValue]);
 
                 Debug.Log($"[{TAG}] 成功添加下拉列表: {modName}.{key}");
                 return true;
@@ -337,7 +334,7 @@ namespace OneKeyLoot
             string description,
             Type valueType,
             object defaultValue,
-            UnityEngine.Vector2? sliderRange = null
+            Vector2? sliderRange = null
         )
         {
             key = $"{modName}_{key}";
@@ -357,16 +354,8 @@ namespace OneKeyLoot
                 // 处理可空参数
                 // Handle nullable parameters
                 object[] parameters = sliderRange.HasValue
-                    ? new object[]
-                    {
-                        modName,
-                        key,
-                        description,
-                        valueType,
-                        defaultValue,
-                        sliderRange.Value,
-                    }
-                    : new object[] { modName, key, description, valueType, defaultValue, null };
+                    ? [modName, key, description, valueType, defaultValue, sliderRange.Value]
+                    : [modName, key, description, valueType, defaultValue, null];
 
                 method.Invoke(null, parameters);
 
@@ -404,7 +393,7 @@ namespace OneKeyLoot
                     "AddBoolDropdownList",
                     BindingFlags.Public | BindingFlags.Static
                 );
-                method.Invoke(null, new object[] { modName, key, description, defaultValue });
+                method.Invoke(null, [modName, key, description, defaultValue]);
 
                 Debug.Log($"[{TAG}] 成功添加布尔下拉列表: {modName}.{key}");
                 return true;
@@ -424,7 +413,7 @@ namespace OneKeyLoot
         /// <param name="key">配置键</param>
         /// <param name="defaultValue">默认值</param>
         /// <returns>加载的值或默认值</returns>
-        public static T SafeLoad<T>(string mod_name, string key, T defaultValue = default(T))
+        public static T SafeLoad<T>(string mod_name, string key, T defaultValue = default)
         {
             key = $"{mod_name}_{key}";
 
@@ -453,7 +442,7 @@ namespace OneKeyLoot
 
                 // 获取泛型方法
                 MethodInfo genericLoadMethod = loadMethod.MakeGenericMethod(typeof(T));
-                object result = genericLoadMethod.Invoke(null, new object[] { key, defaultValue });
+                object result = genericLoadMethod.Invoke(null, [key, defaultValue]);
 
                 Debug.Log($"[{TAG}] 成功加载配置: {key} = {result}");
                 return (T)result;
@@ -502,7 +491,7 @@ namespace OneKeyLoot
 
                 // 获取泛型方法
                 MethodInfo genericSaveMethod = saveMethod.MakeGenericMethod(typeof(T));
-                genericSaveMethod.Invoke(null, new object[] { key, value });
+                genericSaveMethod.Invoke(null, [key, value]);
 
                 Debug.Log($"[{TAG}] 成功保存配置: {key} = {value}");
                 return true;
