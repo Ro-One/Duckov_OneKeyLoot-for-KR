@@ -3,7 +3,9 @@ using System.Linq;
 using System.Reflection;
 using UnityEngine;
 
-//替换为你的mod命名空间, 防止多个同名ModConfigAPI冲突
+///替换为你的mod命名空间, 防止多个同名ModConfigAPI冲突
+///Replace with your mod namespace to prevent conflicts with multiple ModConfigAPI of the same name
+/// 동일한 이름의 여러 ModConfigAPI와의 충돌을 방지하기 위해 모드 네임스페이스로 교체
 namespace OneKeyLoot
 {
     /// <summary>
@@ -57,16 +59,16 @@ namespace OneKeyLoot
 
                     if (!isVersionCompatible)
                     {
-                        Debug.LogError(
-                            $"[{TAG}] 版本不匹配！API版本: {ModConfigVersion}, ModConfig版本: {modConfigVersion}"
-                        );
+                        // Debug.LogError(
+                        //     $"[{TAG}] 版本不匹配！API版本: {ModConfigVersion}, ModConfig版本: {modConfigVersion}"
+                        // );
                         Debug.LogError(
                             $"[{TAG}] ModConfig 버전이 일치하지 않습니다! API 버전: {ModConfigVersion}, ModConfig 버전: {modConfigVersion}"
                         );
                         return false;
                     }
 
-                    Debug.Log($"[{TAG}] 版本检查通过: {ModConfigVersion}");
+                    // Debug.Log($"[{TAG}] 版本检查通过: {ModConfigVersion}");
                     Debug.Log($"[{TAG}] 버전 검사 통과: {ModConfigVersion}");
                     versionChecked = true;
                     return true;
@@ -75,7 +77,7 @@ namespace OneKeyLoot
                 {
                     // 如果找不到版本字段，发出警告但继续运行（向后兼容）
                     // If version field not found, warn but continue (backward compatibility)
-                    Debug.LogWarning($"[{TAG}] 未找到版本信息字段，跳过版本检查");
+                    // Debug.LogWarning($"[{TAG}] 未找到版本信息字段，跳过版本检查");
                     Debug.LogWarning($"[{TAG}] 버전 정보 필드를 찾을 수 없어 버전 검사를 건너뜁니다");
                     isVersionCompatible = true;
                     versionChecked = true;
@@ -84,7 +86,7 @@ namespace OneKeyLoot
             }
             catch (Exception ex)
             {
-                Debug.LogError($"[{TAG}] 版本检查失败: {ex.Message}");
+                // Debug.LogError($"[{TAG}] 版本检查失败: {ex.Message}");
                 Debug.LogError($"[{TAG}] 버전 검사 실패: {ex.Message}");
                 isVersionCompatible = false;
                 versionChecked = true;
@@ -112,9 +114,9 @@ namespace OneKeyLoot
                 modBehaviourType = FindTypeInAssemblies("ModConfig.ModBehaviour");
                 if (modBehaviourType == null)
                 {
-                    Debug.LogWarning(
-                        $"[{TAG}] ModConfig.ModBehaviour 类型未找到，ModConfig 可能未加载"
-                    );
+                    // Debug.LogWarning(
+                    //     $"[{TAG}] ModConfig.ModBehaviour 类型未找到，ModConfig 可能未加载"
+                    // );
                     Debug.LogWarning(
                         $"[{TAG}] ModConfig.ModBehaviour 유형을 찾을 수 없습니다. ModConfig가 로드되지 않았을 수 있습니다."
                     );
@@ -127,7 +129,7 @@ namespace OneKeyLoot
                 optionsManagerType = FindTypeInAssemblies("ModConfig.OptionsManager_Mod");
                 if (optionsManagerType == null)
                 {
-                    Debug.LogWarning($"[{TAG}] ModConfig.OptionsManager_Mod 类型未找到");
+                    // Debug.LogWarning($"[{TAG}] ModConfig.OptionsManager_Mod 类型未找到");
                     Debug.LogWarning($"[{TAG}] ModConfig.OptionsManager_Mod 유형을 찾을 수 없습니다.");
                     return false;
                 }
@@ -137,7 +139,7 @@ namespace OneKeyLoot
                 // 버전 호환성 확인
                 if (!CheckVersionCompatibility())
                 {
-                    Debug.LogWarning($"[{TAG}] ModConfig version mismatch!!!");
+                    // Debug.LogWarning($"[{TAG}] ModConfig version mismatch!!!");
                     Debug.LogWarning($"[{TAG}] ModConfig 버전 불일치!!!");
                     return false;
                 }
@@ -162,20 +164,20 @@ namespace OneKeyLoot
                     );
                     if (method == null)
                     {
-                        Debug.LogError($"[{TAG}] 必要方法 {methodName} 未找到");
+                        // Debug.LogError($"[{TAG}] 必要方法 {methodName} 未找到");
                         Debug.LogError($"[{TAG}] 필요한 메서드 {methodName}를 찾을 수 없습니다.");
                         return false;
                     }
                 }
 
                 isInitialized = true;
-                Debug.Log($"[{TAG}] ModConfigAPI 初始化成功");
+                // Debug.Log($"[{TAG}] ModConfigAPI 初始化成功");
                 Debug.Log($"[{TAG}] ModConfigAPI 초기화 성공");
                 return true;
             }
             catch (Exception ex)
             {
-                Debug.LogError($"[{TAG}] 初始化失败: {ex.Message}");
+                // Debug.LogError($"[{TAG}] 初始化失败: {ex.Message}");
                 Debug.LogError($"[{TAG}] 초기화 실패: {ex.Message}");
                 return false;
             }
@@ -205,7 +207,7 @@ namespace OneKeyLoot
                         // ModConfig 어셈블리 이름이 포함되어 있는지 확인
                         if (assembly.FullName.Contains("ModConfig"))
                         {
-                            Debug.Log($"[{TAG}] 找到 ModConfig 相关程序集: {assembly.FullName}");
+                            // Debug.Log($"[{TAG}] 找到 ModConfig 相关程序集: {assembly.FullName}");
                             Debug.Log($"[{TAG}] ModConfig 관련 어셈블리 찾음: {assembly.FullName}");
                         }
 
@@ -215,9 +217,9 @@ namespace OneKeyLoot
                         Type type = assembly.GetType(typeName);
                         if (type != null)
                         {
-                            Debug.Log(
-                                $"[{TAG}] 在程序集 {assembly.FullName} 中找到类型 {typeName}"
-                            );
+                            // Debug.Log(
+                            //     $"[{TAG}] 在程序集 {assembly.FullName} 中找到类型 {typeName}"
+                            // );
                             Debug.Log(
                                 $"[{TAG}] 어셈블리 {assembly.FullName}에서 유형 {typeName} 찾음"
                             );
@@ -236,15 +238,15 @@ namespace OneKeyLoot
                 // 记录所有已加载的程序集用于调试
                 // Log all loaded assemblies for debugging
                 // 디버깅을 위해 로드된 모든 어셈블리 기록
-                Debug.LogWarning(
-                    $"[{TAG}] 在所有程序集中未找到类型 {typeName}，已加载程序集数量: {assemblies.Length}"
-                );
+                // Debug.LogWarning(
+                //     $"[{TAG}] 在所有程序集中未找到类型 {typeName}，已加载程序集数量: {assemblies.Length}"
+                // );
                 Debug.LogWarning(
                     $"[{TAG}] 모든 어셈블리에서 유형 {typeName}을(를) 찾을 수 없습니다. 로드된 어셈블리 수: {assemblies.Length}"
                 );
                 foreach (var assembly in assemblies.Where(a => a.FullName.Contains("ModConfig")))
                 {
-                    Debug.Log($"[{TAG}] ModConfig 相关程序集: {assembly.FullName}");
+                    // Debug.Log($"[{TAG}] ModConfig 相关程序集: {assembly.FullName}");
                     Debug.Log($"[{TAG}] ModConfig 관련 어셈블리: {assembly.FullName}");
                 }
 
@@ -252,7 +254,7 @@ namespace OneKeyLoot
             }
             catch (Exception ex)
             {
-                Debug.LogError($"[{TAG}] 程序集扫描失败: {ex.Message}");
+                // Debug.LogError($"[{TAG}] 程序集扫描失败: {ex.Message}");
                 Debug.LogError($"[{TAG}] 어셈블리 스캔 실패: {ex.Message}");
                 return null;
             }
@@ -274,7 +276,7 @@ namespace OneKeyLoot
 
             if (action == null)
             {
-                Debug.LogWarning($"[{TAG}] 不能添加空的事件委托");
+                // Debug.LogWarning($"[{TAG}] 不能添加空的事件委托");
                 Debug.LogWarning($"[{TAG}] 빈 이벤트 대리자를 추가할 수 없습니다.");
                 return false;
             }
@@ -287,13 +289,13 @@ namespace OneKeyLoot
                 );
                 method.Invoke(null, new object[] { action });
 
-                Debug.Log($"[{TAG}] 成功添加选项变更事件委托");
+                // Debug.Log($"[{TAG}] 成功添加选项变更事件委托");
                 Debug.Log($"[{TAG}] 옵션 변경 이벤트 대리자 성공적으로 추가됨");
                 return true;
             }
             catch (Exception ex)
             {
-                Debug.LogError($"[{TAG}] 添加选项变更事件委托失败: {ex.Message}");
+                // Debug.LogError($"[{TAG}] 添加选项变更事件委托失败: {ex.Message}");
                 Debug.LogError($"[{TAG}] 옵션 변경 이벤트 대리자 추가 실패: {ex.Message}");
                 return false;
             }
@@ -315,7 +317,7 @@ namespace OneKeyLoot
 
             if (action == null)
             {
-                Debug.LogWarning($"[{TAG}] 不能移除空的事件委托");
+                // Debug.LogWarning($"[{TAG}] 不能移除空的事件委托");
                 Debug.LogWarning($"[{TAG}] 빈 이벤트 대리자를 제거할 수 없습니다.");
                 return false;
             }
@@ -328,13 +330,13 @@ namespace OneKeyLoot
                 );
                 method.Invoke(null, new object[] { action });
 
-                Debug.Log($"[{TAG}] 成功移除选项变更事件委托");
+                // Debug.Log($"[{TAG}] 成功移除选项变更事件委托");
                 Debug.Log($"[{TAG}] 옵션 변경 이벤트 대리자 성공적으로 제거됨");
                 return true;
             }
             catch (Exception ex)
             {
-                Debug.LogError($"[{TAG}] 移除选项变更事件委托失败: {ex.Message}");
+                // Debug.LogError($"[{TAG}] 移除选项变更事件委托失败: {ex.Message}");
                 Debug.LogError($"[{TAG}] 옵션 변경 이벤트 대리자 제거 실패: {ex.Message}");
                 return false;
             }
@@ -372,13 +374,13 @@ namespace OneKeyLoot
                     new object[] { modName, key, description, options, valueType, defaultValue }
                 );
 
-                Debug.Log($"[{TAG}] 成功添加下拉列表: {modName}.{key}");
+                // Debug.Log($"[{TAG}] 成功添加下拉列表: {modName}.{key}");
                 Debug.Log($"[{TAG}] 드롭다운 목록 성공적으로 추가됨: {modName}.{key}");
                 return true;
             }
             catch (Exception ex)
             {
-                Debug.LogError($"[{TAG}] 添加下拉列表失败 {modName}.{key}: {ex.Message}");
+                // Debug.LogError($"[{TAG}] 添加下拉列表失败 {modName}.{key}: {ex.Message}");
                 Debug.LogError($"[{TAG}] 드롭다운 목록 추가 실패 {modName}.{key}: {ex.Message}");
                 return false;
             }
@@ -429,13 +431,13 @@ namespace OneKeyLoot
 
                 method.Invoke(null, parameters);
 
-                Debug.Log($"[{TAG}] 成功添加滑条输入框: {modName}.{key}");
+                // Debug.Log($"[{TAG}] 成功添加滑条输入框: {modName}.{key}");
                 Debug.Log($"[{TAG}] 슬라이더 입력 상자 성공적으로 추가됨: {modName}.{key}");
                 return true;
             }
             catch (Exception ex)
             {
-                Debug.LogError($"[{TAG}] 添加滑条输入框失败 {modName}.{key}: {ex.Message}");
+                // Debug.LogError($"[{TAG}] 添加滑条输入框失败 {modName}.{key}: {ex.Message}");
                 Debug.LogError($"[{TAG}] 슬라이더 입력 상자 추가 실패 {modName}.{key}: {ex.Message}");
                 return false;
             }
@@ -468,13 +470,13 @@ namespace OneKeyLoot
                 );
                 method.Invoke(null, new object[] { modName, key, description, defaultValue });
 
-                Debug.Log($"[{TAG}] 成功添加布尔下拉列表: {modName}.{key}");
+                // Debug.Log($"[{TAG}] 成功添加布尔下拉列表: {modName}.{key}");
                 Debug.Log($"[{TAG}] 부울 드롭다운 목록 성공적으로 추가됨: {modName}.{key}");
                 return true;
             }
             catch (Exception ex)
             {
-                Debug.LogError($"[{TAG}] 添加布尔下拉列表失败 {modName}.{key}: {ex.Message}");
+                // Debug.LogError($"[{TAG}] 添加布尔下拉列表失败 {modName}.{key}: {ex.Message}");
                 Debug.LogError($"[{TAG}] 부울 드롭다운 목록 추가 실패 {modName}.{key}: {ex.Message}");
                 return false;
             }
@@ -500,7 +502,7 @@ namespace OneKeyLoot
 
             if (string.IsNullOrEmpty(key))
             {
-                Debug.LogWarning($"[{TAG}] 配置键不能为空");
+                // Debug.LogWarning($"[{TAG}] 配置键不能为空");
                 Debug.LogWarning($"[{TAG}] 구성 키는 비어 있을 수 없습니다.");
                 return defaultValue;
             }
@@ -513,7 +515,7 @@ namespace OneKeyLoot
                 );
                 if (loadMethod == null)
                 {
-                    Debug.LogError($"[{TAG}] 未找到 OptionsManager_Mod.Load 方法");
+                    // Debug.LogError($"[{TAG}] 未找到 OptionsManager_Mod.Load 方法");
                     Debug.LogError($"[{TAG}] OptionsManager_Mod.Load 메서드를 찾을 수 없습니다.");
                     return defaultValue;
                 }
@@ -524,13 +526,13 @@ namespace OneKeyLoot
                 MethodInfo genericLoadMethod = loadMethod.MakeGenericMethod(typeof(T));
                 object result = genericLoadMethod.Invoke(null, new object[] { key, defaultValue });
 
-                Debug.Log($"[{TAG}] 成功加载配置: {key} = {result}");
+                // Debug.Log($"[{TAG}] 成功加载配置: {key} = {result}");
                 Debug.Log($"[{TAG}] 구성 성공적으로 로드됨: {key} = {result}");
                 return (T)result;
             }
             catch (Exception ex)
             {
-                Debug.LogError($"[{TAG}] 加载配置失败 {key}: {ex.Message}");
+                // Debug.LogError($"[{TAG}] 加载配置失败 {key}: {ex.Message}");
                 Debug.LogError($"[{TAG}] 구성 로드 실패 {key}: {ex.Message}");
                 return defaultValue;
             }
@@ -556,7 +558,7 @@ namespace OneKeyLoot
 
             if (string.IsNullOrEmpty(key))
             {
-                Debug.LogWarning($"[{TAG}] 配置键不能为空");
+                // Debug.LogWarning($"[{TAG}] 配置键不能为空");
                 Debug.LogWarning($"[{TAG}] 구성 키는 비어 있을 수 없습니다.");
                 return false;
             }
@@ -569,24 +571,24 @@ namespace OneKeyLoot
                 );
                 if (saveMethod == null)
                 {
-                    Debug.LogError($"[{TAG}] 未找到 OptionsManager_Mod.Save 方法");
+                    // Debug.LogError($"[{TAG}] 未找到 OptionsManager_Mod.Save 方法");
                     Debug.LogError($"[{TAG}] OptionsManager_Mod.Save 메서드를 찾을 수 없습니다.");
                     return false;
                 }
 
                 // 获取泛型方法
                 // Get generic method
-                // 제네릭 메서드 가져오기
+
                 MethodInfo genericSaveMethod = saveMethod.MakeGenericMethod(typeof(T));
                 genericSaveMethod.Invoke(null, new object[] { key, value });
 
-                Debug.Log($"[{TAG}] 成功保存配置: {key} = {value}");
+                // Debug.Log($"[{TAG}] 成功保存配置: {key} = {value}");
                 Debug.Log($"[{TAG}] 구성 성공적으로 저장됨: {key} = {value}");
                 return true;
             }
             catch (Exception ex)
             {
-                Debug.LogError($"[{TAG}] 保存配置失败 {key}: {ex.Message}");
+                // Debug.LogError($"[{TAG}] 保存配置失败 {key}: {ex.Message}");
                 Debug.LogError($"[{TAG}] 구성 저장 실패 {key}: {ex.Message}");
                 return false;
             }
@@ -620,7 +622,6 @@ namespace OneKeyLoot
             {
                 // 尝试获取版本信息（如果 ModBehaviour 有相关字段或属性）
                 // Try to get version information (if ModBehaviour has related fields or properties)
-                // ModBehaviour에 관련 필드나 속성이 있는 경우 버전 정보 가져오기 시도
                 FieldInfo versionField = modBehaviourType.GetField(
                     "VERSION",
                     BindingFlags.Public | BindingFlags.Static
