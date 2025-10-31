@@ -62,7 +62,7 @@ namespace OneKeyLoot
         public bool showQuality = true;
         public bool showValue = true;
         public bool showValueWeight = true;
-        public bool autoChangeQualityColor = false;
+        public bool autoChangeQualityColor = true;
         public string qualityRange = "2,3,4,5";
         public string valueRange = "100,500,1000";
         public string valueWeightRange = "500,2500,5000";
@@ -420,7 +420,7 @@ namespace OneKeyLoot
                     {
                         if (int.TryParse(raw.Trim(), out var v))
                         {
-                            list.Add(AutoQualityColorPalette[v]);
+                            list.Add(AutoQualityColorPalette[v% AutoQualityColorPalette.Length]);
                             Debug.Log($"[OneKeyLoot]: quality color for range {v} parsed");
                         }
                         else
@@ -779,6 +779,7 @@ namespace OneKeyLoot
                 var qColors = new List<Color>();
                 if (cfg.autoChangeQualityColor)
                 {
+                    Debug.Log("[OneKeyLoot]: Using auto quality color palette");
                     qColors = ParseQualityColorCsvByRange(
                         cfg.qualityRange,
                         defaultPalette
@@ -786,6 +787,7 @@ namespace OneKeyLoot
                 }
                 else
                 {
+                    Debug.Log("[OneKeyLoot]: Using custom quality color palette");
                     qColors = ParseColorCsv(cfg.qualityColor, defaultPalette);
                 }
                 List<Color> vColors = ParseColorCsv(cfg.valueColor, defaultPalette);

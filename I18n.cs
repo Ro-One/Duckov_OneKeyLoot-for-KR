@@ -111,10 +111,7 @@ namespace OneKeyLoot
             .AddText(Keys.Config.ShowCollectAll, "Display [Collect All]")
             .AddText(Keys.Config.ShowQuality, "Display [One-Key Loot (by Quality)]")
             .AddText(Keys.Config.ShowValue, "Display [One-Key Loot (by Value)]")
-            .AddText(
-                Keys.Config.ShowValueWeight,
-                "Display [One-Key Loot (by Value per unit Weight)]"
-            )
+            .AddText(Keys.Config.ShowValueWeight, "Display [One-Key Loot (by Value per unit Weight)]")
             .AddText(Keys.Config.QualityRange, "Quality Range (1~9)")
             .AddText(Keys.Config.ValueRange, "Value Range (1+)")
             .AddText(Keys.Config.ValueWeightRange, "Value/Weight Range (1+)")
