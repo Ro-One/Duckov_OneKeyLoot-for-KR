@@ -1,6 +1,6 @@
 # 逃离鸭克夫 Mod —— 一键收集战利品
 
-中文 | [English](README_EN.md)
+中文 | [English](README_EN.md) | [한국어](README_KR.md)
 
 ## Steam WorkShop
 
