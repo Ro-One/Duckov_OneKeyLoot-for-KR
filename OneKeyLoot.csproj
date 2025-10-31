@@ -1,83 +1,28 @@
 <Project Sdk="Microsoft.NET.Sdk">
-  <PropertyGroup>
-    <TargetFramework>net4.8</TargetFramework>
-    <LangVersion>latest</LangVersion>
-    <EnableDefaultCompileItems>false</EnableDefaultCompileItems>
-    <!-- 游戏根目录 -->
-    <GameDir>D:\SteamLibrary\steamapps\common\Escape from Duckov\</GameDir>
-  </PropertyGroup>
-  <ItemGroup>
-    <Reference Include="TeamSoda.Duckov.Core">
-      <HintPath>$(GameDir)\Duckov_Data\Managed\TeamSoda.Duckov.Core.dll</HintPath>
-      <Private>false</Private>
-    </Reference>
-    <Reference Include="ItemStatsSystem">
-      <HintPath>$(GameDir)\Duckov_Data\Managed\ItemStatsSystem.dll</HintPath>
-      <Private>false</Private>
-    </Reference>
-    <Reference Include="UnityEngine">
-      <HintPath>$(GameDir)\Duckov_Data\Managed\UnityEngine.dll</HintPath>
-      <Private>false</Private>
-    </Reference>
-    <Reference Include="UnityEngine.JSONSerializeModule">
-      <HintPath>$(GameDir)\Duckov_Data\Managed\UnityEngine.JSONSerializeModule.dll</HintPath>
-      <Private>false</Private>
-    </Reference>
-    <Reference Include="UnityEngine.CoreModule">
-      <HintPath>$(GameDir)\Duckov_Data\Managed\UnityEngine.CoreModule.dll</HintPath>
-      <Private>false</Private>
-    </Reference>
-    <Reference Include="UnityEngine.UI">
-      <HintPath>$(GameDir)\Duckov_Data\Managed\UnityEngine.UI.dll</HintPath>
-      <Private>false</Private>
-    </Reference>
-    <Reference Include="UnityEngine.UIModule">
-      <HintPath>$(GameDir)\Duckov_Data\Managed\UnityEngine.UIModule.dll</HintPath>
-      <Private>false</Private>
-    </Reference>
-    <Reference Include="UnityEngine.TextRenderingModule">
-      <HintPath>$(GameDir)\Duckov_Data\Managed\UnityEngine.TextRenderingModule.dll</HintPath>
-      <Private>false</Private>
-    </Reference>
-    <Reference Include="Unity.TextMeshPro">
-      <HintPath>$(GameDir)\Duckov_Data\Managed\Unity.TextMeshPro.dll</HintPath>
-      <Private>false</Private>
-    </Reference>
-    <Reference Include="UnityEngine.TextCoreTextEngineModule">
-      <HintPath>$(GameDir)\Duckov_Data\Managed\UnityEngine.TextCoreTextEngineModule.dll</HintPath>
-      <Private>false</Private>
-    </Reference>
-    <Reference Include="Sirenix.Serialization">
-      <HintPath>$(GameDir)\Duckov_Data\Managed\Sirenix.Serialization.dll</HintPath>
-      <Private>false</Private>
-    </Reference>
-    <Reference Include="Sirenix.OdinInspector.Attributes">
-      <HintPath>$(GameDir)\Duckov_Data\Managed\Sirenix.OdinInspector.Attributes.dll</HintPath>
-      <Private>false</Private>
-    </Reference>
-    <Reference Include="FMODUnity">
-      <HintPath>$(GameDir)\Duckov_Data\Managed\FMODUnity.dll</HintPath>
-      <Private>false</Private>
-    </Reference>
-    <Reference Include="TeamSoda.Duckov.Utilities">
-      <HintPath>$(GameDir)\Duckov_Data\Managed\TeamSoda.Duckov.Utilities.dll</HintPath>
-      <Private>false</Private>
-    </Reference>
-    <Reference Include="TeamSoda.MiniLocalizor">
-      <HintPath>$(GameDir)\Duckov_Data\Managed\TeamSoda.MiniLocalizor.dll</HintPath>
-      <Private>false</Private>
-    </Reference>
-    <Reference Include="SodaLocalization">
-      <HintPath>$(GameDir)\Duckov_Data\Managed\SodaLocalization.dll</HintPath>
-      <Private>false</Private>
-    </Reference>
-  </ItemGroup>
-  <ItemGroup>
-    <PackageReference Include="Lib.Harmony" Version="2.4.1" GeneratePathProperty="true" />
-  </ItemGroup>
-  <ItemGroup>
-    <Compile Include="OneKeyLoot.cs" />
-    <Compile Include="I18n.cs" />
-    <Compile Include="ModConfigApi.cs" />
-  </ItemGroup>
+    <PropertyGroup>
+        <TargetFramework>net4.8</TargetFramework>
+        <LangVersion>latest</LangVersion>
+        <EnableDefaultCompileItems>false</EnableDefaultCompileItems>
+        <!-- 游戏根目录 -->
+        <GameDir>D:\Program Files (x86)\Steam\steamapps\common\Escape from Duckov\</GameDir>
+    </PropertyGroup>
+    <ItemGroup>
+        <GameManagedDll Include="$(GameDir)\Duckov_Data\Managed\*.dll" />
+        <GameManagedDll Remove="$(GameDir)\Duckov_Data\Managed\System*.dll" />
+        <GameManagedDll Remove="$(GameDir)\Duckov_Data\Managed\Microsoft*.dll" />
+        <GameManagedDll Remove="$(GameDir)\Duckov_Data\Managed\netstandard.dll" />
+        <GameManagedDll Remove="$(GameDir)\Duckov_Data\Managed\mscorlib.dll" />
+        <GameManagedDll Remove="$(GameDir)\Duckov_Data\Managed\Mono.Security.dll" />
+    </ItemGroup>
+    <ItemGroup>
+        <Reference Include="@(GameManagedDll)">
+            <Private>false</Private>
+        </Reference>
+    </ItemGroup>
+    <ItemGroup>
+        <PackageReference Include="Lib.Harmony" Version="2.4.1" GeneratePathProperty="true" />
+    </ItemGroup>
+    <ItemGroup>
+        <Compile Include="OneKeyLoot\*.cs" />
+    </ItemGroup>
 </Project>
