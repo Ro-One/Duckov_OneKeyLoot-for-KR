@@ -229,7 +229,7 @@ namespace OneKeyLoot
             );
             ModConfigAPI.SafeAddBoolDropdownList(
                 Mod_DisplayName,
-                "AutoChangeQualityColorLabel",
+                "autoChangeQualityColor",
                 i18n.Config.AutoChangeQualityColorLabel,
                 config.autoChangeQualityColor
             );
