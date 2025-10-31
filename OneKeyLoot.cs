@@ -231,7 +231,7 @@ namespace OneKeyLoot
                 Mod_DisplayName,
                 "AutoChangeQualityColorLabel",
                 i18n.Config.AutoChangeQualityColorLabel,
-                config.showValue
+                config.autoChangeQualityColor
             );
             ModConfigAPI.SafeAddInputWithSlider(
                 Mod_DisplayName,
@@ -775,6 +775,7 @@ namespace OneKeyLoot
                     cfg.valueWeightRange,
                     DefaultConfig.Defaults.valueWeightRange
                 );
+                
                 var qColors = new List<Color>();
                 if (cfg.autoChangeQualityColor)
                 {
