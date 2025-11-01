@@ -141,6 +141,31 @@ namespace OneKeyLoot
             .AddText(Keys.ValueWeight.Title, "一键收集战利品（按价重比）")
             .AddText(Keys.ValueWeight.ButtonText, "价重比≥{0}")
             .AddMeta(Keys.ValueWeight.ButtonFontSize, 20);
+            
+        private static readonly LanguagePack PackKR = new LanguagePack()
+            // Config
+            .AddText(Keys.Config.ShowCollectAll, "【일괄 수집】 표시")
+            .AddText(Keys.Config.ShowQuality, "【희귀도 기준 일괄 수집】 표시")
+            .AddText(Keys.Config.QualityRange, "희귀도 범위 (1~9)")
+            .AddText(Keys.Config.ShowValue, "【가치 기준 일괄 수집】 표시")
+            .AddText(Keys.Config.ValueRange, "가치 범위 (1 이상)")
+            .AddText(Keys.Config.ShowValueWeight, "【중량 대비 가치 기준 일괄 수집】 표시")
+            .AddText(Keys.Config.ValueWeightRange, "중량 대비 가치 범위 (1 이상)")
+            .AddText(Keys.Config.QualityColor, "희귀도 버튼 색상")
+            .AddText(Keys.Config.ValueColor, "가치 버튼 색상")
+            .AddText(Keys.Config.ValueWeightColor, "중량 대비 가치 버튼 색상")
+            // Quality
+            .AddText(Keys.Quality.Title, "희귀도 기준 일괄 수집")
+            .AddText(Keys.Quality.ButtonText, "희귀도≥{0}")
+            .AddMeta(Keys.Quality.ButtonFontSize, 24)
+            // Value
+            .AddText(Keys.Value.Title, "가치 기준 일괄 수집")
+            .AddText(Keys.Value.ButtonText, "가치≥{0}")
+            .AddMeta(Keys.Value.ButtonFontSize, 24)
+            // Value/Weight
+            .AddText(Keys.ValueWeight.Title, "중량 대비 가치 기준 일괄 수집")
+            .AddText(Keys.ValueWeight.ButtonText, "중량 대비 가치≥{0}")
+            .AddMeta(Keys.ValueWeight.ButtonFontSize, 20);
 
         private static LanguagePack s_CurrentPack = PackEN;
 
@@ -297,13 +322,28 @@ namespace OneKeyLoot
         {
             // 简体/繁体 → 中文；其余 → 英文
             // 간체/번체 -> 중국어팩; 한국어 -> 한국어 팩; 그외 -> 영어팩
-            s_CurrentPack =
-                (
-                    lang == SystemLanguage.ChineseSimplified
-                    || lang == SystemLanguage.ChineseTraditional
-                )
-                    ? PackZH
-                    : PackEN;
+            
+            // Change s_CurrentPack based on lang
+            switch(lang)
+            {
+                case SystemLanguage.ChineseSimplified:
+                case SystemLanguage.ChineseTraditional:
+                    s_CurrentPack = PackZH;
+                    break;
+                case SystemLanguage.Korean:
+                    s_CurrentPack = PackKR;
+                    break;
+                default:
+                    s_CurrentPack = PackEN;
+                    break;
+            }
+            // s_CurrentPack =
+            //     (
+            //         lang == SystemLanguage.ChineseSimplified
+            //         || lang == SystemLanguage.ChineseTraditional
+            //     )
+            //         ? PackZH
+            //         : PackEN;
 
             // 推送覆盖文本给全局（仅 Texts；Meta 仅内部使用）
             // 텍스트 전역 덮어쓰기 (Texts만 해당; Meta는 내부 전용)
