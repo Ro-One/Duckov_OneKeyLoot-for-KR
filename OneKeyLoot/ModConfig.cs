@@ -36,6 +36,9 @@ namespace OneKeyLoot
     {
         public const string DisplayName = "一键拾取战利品 One-Key Loot";
 
+        // 配置变更事件
+        public static event Action RuntimeChanged;
+
         // 内部持久化实体（与 ModConfigAPI 交互）
         private static readonly ModConfigData _config = new();
 
@@ -79,6 +82,7 @@ namespace OneKeyLoot
         {
             s_RuntimeConfig ??= new ModConfigData();
             JsonUtility.FromJsonOverwrite(JsonUtility.ToJson(src), s_RuntimeConfig);
+            RuntimeChanged?.Invoke();
         }
 
         private static void SaveConfig(ModConfigData cfg)
@@ -200,52 +204,48 @@ namespace OneKeyLoot
 
         private static void LoadConfigFromModConfig()
         {
-            _config.showCollectAll = ModConfigAPI.SafeLoad<bool>(
+            _config.showCollectAll = ModConfigAPI.SafeLoad(
                 DisplayName,
                 "showCollectAll",
                 _config.showCollectAll
             );
-            _config.showQuality = ModConfigAPI.SafeLoad<bool>(
+            _config.showQuality = ModConfigAPI.SafeLoad(
                 DisplayName,
                 "showQuality",
                 _config.showQuality
             );
-            _config.qualityRange = ModConfigAPI.SafeLoad<string>(
+            _config.qualityRange = ModConfigAPI.SafeLoad(
                 DisplayName,
                 "qualityRange",
                 _config.qualityRange
             );
-            _config.showValue = ModConfigAPI.SafeLoad<bool>(
-                DisplayName,
-                "showValue",
-                _config.showValue
-            );
-            _config.valueRange = ModConfigAPI.SafeLoad<string>(
+            _config.showValue = ModConfigAPI.SafeLoad(DisplayName, "showValue", _config.showValue);
+            _config.valueRange = ModConfigAPI.SafeLoad(
                 DisplayName,
                 "valueRange",
                 _config.valueRange
             );
-            _config.showValueWeight = ModConfigAPI.SafeLoad<bool>(
+            _config.showValueWeight = ModConfigAPI.SafeLoad(
                 DisplayName,
                 "showValueWeight",
                 _config.showValueWeight
             );
-            _config.valueWeightRange = ModConfigAPI.SafeLoad<string>(
+            _config.valueWeightRange = ModConfigAPI.SafeLoad(
                 DisplayName,
                 "valueWeightRange",
                 _config.valueWeightRange
             );
-            _config.qualityColor = ModConfigAPI.SafeLoad<string>(
+            _config.qualityColor = ModConfigAPI.SafeLoad(
                 DisplayName,
                 "qualityColor",
                 _config.qualityColor
             );
-            _config.valueColor = ModConfigAPI.SafeLoad<string>(
+            _config.valueColor = ModConfigAPI.SafeLoad(
                 DisplayName,
                 "valueColor",
                 _config.valueColor
             );
-            _config.valueWeightColor = ModConfigAPI.SafeLoad<string>(
+            _config.valueWeightColor = ModConfigAPI.SafeLoad(
                 DisplayName,
                 "valueWeightColor",
                 _config.valueWeightColor

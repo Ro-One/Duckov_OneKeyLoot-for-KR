@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using Duckov;
+using Duckov.UI;
 using HarmonyLib;
 using ItemStatsSystem;
 using UnityEngine;
@@ -9,16 +10,16 @@ using UnityEngine.UI;
 
 namespace OneKeyLoot
 {
-    [HarmonyPatch(typeof(Duckov.UI.LootView))]
+    [HarmonyPatch(typeof(LootView))]
     internal static class LootViewPatches
     {
-        private static readonly AccessTools.FieldRef<Duckov.UI.LootView, Button> PickAllRef =
-            AccessTools.FieldRefAccess<Duckov.UI.LootView, Button>("pickAllButton");
+        private static readonly AccessTools.FieldRef<LootView, Button> PickAllRef =
+            AccessTools.FieldRefAccess<LootView, Button>("pickAllButton");
 
         private static readonly AccessTools.FieldRef<
-            Duckov.UI.LootView,
+            LootView,
             InteractableLootbox
-        > TargetLootBoxRef = AccessTools.FieldRefAccess<Duckov.UI.LootView, InteractableLootbox>(
+        > TargetLootBoxRef = AccessTools.FieldRefAccess<LootView, InteractableLootbox>(
             "targetLootBox"
         );
 
@@ -29,6 +30,309 @@ namespace OneKeyLoot
             UIConstants.Color4,
             UIConstants.Color5,
         ];
+
+        // 缓存结构 + 全局列表（弱引用，避免持有强引用导致泄漏）
+        private sealed class CacheEntry
+        {
+            public WeakReference<LootView> LvRef;
+            public RectTransform Parent;
+            public RectTransform Root;
+            public Button PickAll;
+        }
+
+        private static readonly Dictionary<RectTransform, CacheEntry> s_cache = new();
+
+        static LootViewPatches()
+        {
+            ModConfig.RuntimeChanged += OnRuntimeConfigChanged;
+        }
+
+        private static void OnRuntimeConfigChanged()
+        {
+            var toRemove = new List<RectTransform>();
+            foreach (KeyValuePair<RectTransform, CacheEntry> kvp in s_cache)
+            {
+                var entry = kvp.Value;
+                if (entry == null || entry.Parent == null || !entry.Parent)
+                {
+                    toRemove.Add(kvp.Key);
+                    continue;
+                }
+                if (!entry.LvRef.TryGetTarget(out var lv) || lv == null)
+                {
+                    toRemove.Add(kvp.Key);
+                    continue;
+                }
+                ReapplyFromConfig(lv, entry.Parent, entry.PickAll);
+            }
+            foreach (var key in toRemove)
+            {
+                s_cache.Remove(key);
+            }
+
+            i18n.RelabelActiveLootViews();
+        }
+
+        // 创建根节点，所有UI元素全部挂载在根节点下，方便一键控制
+        private static RectTransform CreateRootNode(RectTransform parent, Transform placeAfter)
+        {
+            var rt = parent.Find("OKL_Root") as RectTransform;
+            if (rt == null)
+            {
+                var go = new GameObject("OKL_Root", typeof(RectTransform));
+                rt = go.GetComponent<RectTransform>();
+                rt.SetParent(parent, false);
+
+                // 拉伸到父节点宽度（高度由子物体+Layout计算）
+                rt.anchorMin = new Vector2(0f, 0.5f);
+                rt.anchorMax = new Vector2(1f, 0.5f);
+                rt.pivot = new Vector2(0.5f, 0.5f);
+                rt.sizeDelta = Vector2.zero;
+
+                // 让 OKL_Root 作为一个“块”参与父容器的竖直布局与自适应高度
+                var vlg = go.AddComponent<VerticalLayoutGroup>();
+                vlg.childControlWidth = true;
+                vlg.childControlHeight = true;
+                vlg.childForceExpandWidth = true;
+                vlg.childForceExpandHeight = false;
+                vlg.spacing = 0;
+                vlg.padding = new RectOffset(0, 0, 0, 0);
+
+                var csf = go.AddComponent<ContentSizeFitter>();
+                csf.horizontalFit = ContentSizeFitter.FitMode.Unconstrained;
+                csf.verticalFit = ContentSizeFitter.FitMode.PreferredSize;
+
+                // 可选：占位用的 LayoutElement（不设也行）
+                go.AddComponent<LayoutElement>();
+            }
+
+            // 把 OKL_Root 放在 PickAll 后面一位（保证整体顺序）
+            if (placeAfter != null)
+            {
+                rt.SetSiblingIndex(placeAfter.GetSiblingIndex() + 1);
+            }
+
+            // 只要在使用前确保它是激活的
+            if (!rt.gameObject.activeSelf)
+            {
+                rt.gameObject.SetActive(true);
+            }
+
+            return rt;
+        }
+
+        // 根据 ModConfig 重新渲染计算按钮
+        private static void ReapplyFromConfig(LootView lv, RectTransform parent, Button pickAll)
+        {
+            if (!parent || !pickAll)
+            {
+                return;
+            }
+
+            Debug.Log($"[OneKeyLoot]: ReapplyFromConfig Start");
+
+            var root = LookupRoot(lv, parent, pickAll);
+
+            // —— 计算基准宽高 ——
+            var lePick =
+                pickAll.GetComponent<LayoutElement>()
+                ?? pickAll.gameObject.AddComponent<LayoutElement>();
+            float baseW =
+                lePick.preferredWidth > 0
+                    ? lePick.preferredWidth
+                    : pickAll.GetComponent<RectTransform>().rect.width;
+            float baseH =
+                lePick.preferredHeight > 0
+                    ? lePick.preferredHeight
+                    : pickAll.GetComponent<RectTransform>().rect.height;
+            /*
+            if (baseW <= 0)
+            {
+                baseW = 200f;
+            }
+
+            if (baseH <= 0)
+            {
+                baseH = 48f;
+            }
+            */
+
+            // —— 找到/创建三组容器：Panel + Title + Row ——
+            var qPanel = UIHelpers.FindOrCreateRect(root, UIConstants.QualityPanelName);
+            UIHelpers.SetupPanel(qPanel, pickAll.image, baseH);
+            var qTitle = UIHelpers.CreateOrUpdateTitleTMP(
+                qPanel.gameObject,
+                UIConstants.QualityTitleName,
+                i18n.Quality.Title
+            );
+            UIHelpers.ApplyRefFont(qTitle, pickAll);
+
+            var qRow = UIHelpers.FindOrCreateRect(
+                root,
+                UIConstants.QualityRowName,
+                siblingAfter: qPanel.transform
+            );
+            UIHelpers.SetupRow(qRow, baseH);
+            (
+                qRow.GetComponent<LayoutElement>() ?? qRow.gameObject.AddComponent<LayoutElement>()
+            ).preferredWidth = baseW;
+
+            var vPanel = UIHelpers.FindOrCreateRect(root, UIConstants.ValuePanelName);
+            UIHelpers.SetupPanel(vPanel, pickAll.image, baseH);
+            var vTitle = UIHelpers.CreateOrUpdateTitleTMP(
+                vPanel.gameObject,
+                UIConstants.ValueTitleName,
+                i18n.Value.Title
+            );
+            UIHelpers.ApplyRefFont(vTitle, pickAll);
+
+            var vRow = UIHelpers.FindOrCreateRect(
+                root,
+                UIConstants.ValueRowName,
+                siblingAfter: vPanel.transform
+            );
+            UIHelpers.SetupRow(vRow, baseH);
+            (
+                vRow.GetComponent<LayoutElement>() ?? vRow.gameObject.AddComponent<LayoutElement>()
+            ).preferredWidth = baseW;
+
+            var vwPanel = UIHelpers.FindOrCreateRect(root, UIConstants.ValueWeightPanelName);
+            UIHelpers.SetupPanel(vwPanel, pickAll.image, baseH);
+            var vwTitle = UIHelpers.CreateOrUpdateTitleTMP(
+                vwPanel.gameObject,
+                UIConstants.ValueWeightTitleName,
+                i18n.ValueWeight.Title
+            );
+            UIHelpers.ApplyRefFont(vwTitle, pickAll);
+
+            var vwRow = UIHelpers.FindOrCreateRect(
+                root,
+                UIConstants.ValueWeightRowName,
+                siblingAfter: vwPanel.transform
+            );
+            UIHelpers.SetupRow(vwRow, baseH);
+            (
+                vwRow.GetComponent<LayoutElement>()
+                ?? vwRow.gameObject.AddComponent<LayoutElement>()
+            ).preferredWidth = baseW;
+
+            // —— 解析当前配置 ——
+            var cfg = ModConfig.Runtime;
+            var defaultPalette = DefaultButtonColorPalette;
+            var qualityList = ParseRangeCsv(cfg.qualityRange, ModConfigData.Defaults.qualityRange);
+            var valueList = ParseRangeCsv(cfg.valueRange, ModConfigData.Defaults.valueRange);
+            var valueWeightList = ParseRangeCsv(
+                cfg.valueWeightRange,
+                ModConfigData.Defaults.valueWeightRange
+            );
+
+            var qColors = ParseColorCsv(cfg.qualityColor, defaultPalette);
+            var vColors = ParseColorCsv(cfg.valueColor, defaultPalette);
+            var vwColors = ParseColorCsv(cfg.valueWeightColor, defaultPalette);
+
+            // —— 清掉不需要的旧按钮，并补齐新按钮 ——
+            PruneRowButtons(qRow, "OKL_Button_Quality_", [.. qualityList]);
+            PruneRowButtons(vRow, "OKL_Button_Value_", [.. valueList]);
+            PruneRowButtons(vwRow, "OKL_Button_ValueWeight_", [.. valueWeightList]);
+
+            // —— 目标宽高与参考样式 ——
+            float spacing = UIConstants.ButtonRowSpacing;
+            float qTargetW = UIHelpers.CalcTargetWidth(baseW, spacing, qualityList.Count);
+            float vTargetW = UIHelpers.CalcTargetWidth(baseW, spacing, valueList.Count);
+            float vwTargetW = UIHelpers.CalcTargetWidth(baseW, spacing, valueWeightList.Count);
+            float targetH = baseH;
+
+            var refShadow = pickAll.GetComponent<Shadow>();
+            var refOutline = pickAll.GetComponent<Outline>();
+
+            // —— 质量按钮 ——
+            for (int i = 0; i < qualityList.Count; i++)
+            {
+                int minQ = qualityList[i];
+                CreateFilterButton(
+                    qRow,
+                    pickAll,
+                    qTargetW,
+                    targetH,
+                    $"OKL_Button_Quality_{minQ}",
+                    GetButtonColor(qColors, i),
+                    minQ,
+                    refShadow,
+                    refOutline,
+                    lv,
+                    QualityChecker,
+                    i18n.Quality.Button,
+                    i18n.Quality.ButtonFontSize,
+                    i
+                );
+            }
+            // —— 价值按钮 ——
+            for (int i = 0; i < valueList.Count; i++)
+            {
+                int minV = valueList[i];
+                CreateFilterButton(
+                    vRow,
+                    pickAll,
+                    vTargetW,
+                    targetH,
+                    $"OKL_Button_Value_{minV}",
+                    GetButtonColor(vColors, i),
+                    minV,
+                    refShadow,
+                    refOutline,
+                    lv,
+                    ValueChecker,
+                    i18n.Value.Button,
+                    i18n.Value.ButtonFontSize,
+                    i
+                );
+            }
+            // —— 价重比按钮 ——
+            for (int i = 0; i < valueWeightList.Count; i++)
+            {
+                int minW = valueWeightList[i];
+                CreateFilterButton(
+                    vwRow,
+                    pickAll,
+                    vwTargetW,
+                    targetH,
+                    $"OKL_Button_ValueWeight_{minW}",
+                    GetButtonColor(vwColors, i),
+                    minW,
+                    refShadow,
+                    refOutline,
+                    lv,
+                    ValueWeightChecker,
+                    i18n.ValueWeight.Button,
+                    i18n.ValueWeight.ButtonFontSize,
+                    i
+                );
+            }
+
+            // —— 显隐统一在“配置变更”时套用 ——
+            qPanel.gameObject.SetActive(cfg.showQuality);
+            qRow.gameObject.SetActive(cfg.showQuality);
+            vPanel.gameObject.SetActive(cfg.showValue);
+            vRow.gameObject.SetActive(cfg.showValue);
+            vwPanel.gameObject.SetActive(cfg.showValueWeight);
+            vwRow.gameObject.SetActive(cfg.showValueWeight);
+
+            if (root.Find("OKL_BottomSpacer") == null)
+            {
+                var sp = new GameObject("OKL_BottomSpacer", typeof(RectTransform));
+                var spRt = sp.GetComponent<RectTransform>();
+                spRt.SetParent(root, false);
+                spRt.anchorMin = new Vector2(0f, 0.5f);
+                spRt.anchorMax = new Vector2(1f, 0.5f);
+                spRt.pivot = new Vector2(0.5f, 0.5f);
+                spRt.sizeDelta = Vector2.zero;
+                var le = sp.AddComponent<LayoutElement>();
+                le.flexibleWidth = 1f;
+                le.preferredHeight = UIConstants.BottomSpacerHeight;
+                sp.SetActive(true);
+            }
+            Debug.Log($"[OneKeyLoot]: ReapplyFromConfig End");
+        }
 
         // ✅ 解析颜色 CSV：若任一 token 非法或最终为空 => 回退到默认调色板（最多取 4 个）
         private static List<Color> ParseColorCsv(string csv, IReadOnlyList<Color> fallback)
@@ -75,7 +379,7 @@ namespace OneKeyLoot
         private static readonly Func<Item, int> ValueChecker = static item =>
             item.GetTotalRawValue() / 2;
         private static readonly Func<Item, int> ValueWeightChecker = static item =>
-            (int)(ValueChecker(item) / item.SelfWeight);
+            item.SelfWeight == 0f ? int.MaxValue : (int)(ValueChecker(item) / item.SelfWeight);
 
         // CSV 解析：失败时回退到默认配置
         private static List<int> ParseRangeCsv(string csv, string fallbackCsv)
@@ -149,11 +453,7 @@ namespace OneKeyLoot
             }
         }
 
-        private static void TryPickAllBy(
-            Duckov.UI.LootView lv,
-            int min,
-            Func<Item, int> itemChecker
-        )
+        private static void TryPickAllBy(LootView lv, int min, Func<Item, int> itemChecker)
         {
             AudioManager.Post("UI/confirm");
             var inv = lv?.TargetInventory;
@@ -190,10 +490,10 @@ namespace OneKeyLoot
             {
                 return;
             }
-            PickAll(lv, work);
+            PickAll(work);
         }
 
-        private static void PickAll(Duckov.UI.LootView lv, List<Item> work)
+        private static void PickAll(List<Item> work)
         {
             var characterItem = LevelManager.Instance?.MainCharacter?.CharacterItem;
             foreach (var item in work)
@@ -206,40 +506,91 @@ namespace OneKeyLoot
             }
         }
 
+        // 控制根节点显隐
+        private static void toggleRootNode(RectTransform parent, bool show)
+        {
+            var root = s_cache.TryGetValue(parent, out var ce) ? ce?.Root : null;
+            if (root)
+            {
+                root.gameObject.SetActive(show);
+            }
+        }
+
+        // 根据parent创建并缓存根节点
+        // 所有UI元素全部挂载在根节点下，方便一键控制
+        private static RectTransform LookupRoot(LootView lv, RectTransform parent, Button pickAll)
+        {
+            if (s_cache.TryGetValue(parent, out var entry))
+            {
+                return entry.Root;
+            }
+            Debug.Log($"[OneKeyLoot]: Creating new root node for LootView");
+            var root = CreateRootNode(parent, pickAll.transform);
+            s_cache.Clear();
+            s_cache[parent] = new CacheEntry
+            {
+                LvRef = new WeakReference<LootView>(lv),
+                Parent = parent,
+                Root = root,
+                PickAll = pickAll,
+            };
+            return root;
+        }
+
 #pragma warning disable IDE0051
+        /// <summary>
+        /// 控制战利品界面所有按钮显隐
+        /// </summary>
         [HarmonyPostfix]
         [HarmonyPatch("RefreshPickAllButton")]
         private static void Postfix_RefreshPickAllButton(object __instance)
         {
-            if (!ModConfig.Runtime.showCollectAll)
+            var lv = (LootView)__instance;
+            if (lv.TargetInventory == null)
             {
                 return;
             }
-            var lv = (Duckov.UI.LootView)__instance;
 
             var targetLootBox = TargetLootBoxRef(lv);
-            if (targetLootBox != null && targetLootBox.name == "PlayerStorage")
+            if (!targetLootBox)
             {
                 return;
             }
-
+            // Debug.Log($"[OneKeyLoot]: LootViewPatches TargetLootBox: {targetLootBox?.name}");
             var pickAll = PickAllRef(lv);
             if (!pickAll)
             {
                 return;
             }
+            if (targetLootBox.name == "PlayerStorage")
+            {
+                toggleRootNode(pickAll.transform.parent as RectTransform, false);
+                return;
+            }
 
-            pickAll.gameObject.SetActive(true);
+            pickAll.gameObject.SetActive(ModConfig.Runtime.showCollectAll);
+            toggleRootNode(pickAll.transform.parent as RectTransform, true);
         }
 
+        /// <summary>
+        /// 打开战利品界面后创建UI文本、按钮/更新缓存
+        /// </summary>
         [HarmonyPostfix]
         [HarmonyPatch("OnOpen")]
         private static void Postfix_OnOpen(object __instance)
         {
-            var lv = (Duckov.UI.LootView)__instance;
-
+            var lv = (LootView)__instance;
+            if (lv.TargetInventory == null)
+            {
+                return;
+            }
             var targetLootBox = TargetLootBoxRef(lv);
-            if (targetLootBox != null && targetLootBox.name == "PlayerStorage")
+            if (!targetLootBox)
+            {
+                return;
+            }
+            // Debug.Log($"[OneKeyLoot]: OnOpen TargetLootBox: {targetLootBox?.name}");
+            if (targetLootBox.name == "PlayerStorage")
             {
                 return;
             }
@@ -251,237 +602,13 @@ namespace OneKeyLoot
             }
 
             var parent = pickAll.transform.parent as RectTransform;
-            if (!parent)
+            // 更换场景时parent也会发生变化
+            if (!parent || s_cache.ContainsKey(parent))
             {
                 return;
             }
 
-            // 基于 pickAll 推导控件基准宽高（布局未刷新时使用 preferred 值）
-            var lePick =
-                pickAll.GetComponent<LayoutElement>()
-                ?? pickAll.gameObject.AddComponent<LayoutElement>();
-            float baseW =
-                lePick.preferredWidth > 0
-                    ? lePick.preferredWidth
-                    : pickAll.GetComponent<RectTransform>().rect.width;
-            float baseH =
-                lePick.preferredHeight > 0
-                    ? lePick.preferredHeight
-                    : pickAll.GetComponent<RectTransform>().rect.height;
-            if (baseW <= 0)
-            {
-                baseW = 200f;
-            }
-
-            if (baseH <= 0)
-            {
-                baseH = 48f;
-            }
-
-            // Quality：Panel + Title + Row
-            var qRow = UIHelpers.FindOrCreateRect(
-                parent,
-                UIConstants.QualityRowName,
-                siblingAfter: pickAll.transform
-            );
-            UIHelpers.SetupRow(qRow, baseH);
-            // 行宽固定为与 pickAll 一致，避免被父容器拉满
-            var qRowLe =
-                qRow.GetComponent<LayoutElement>() ?? qRow.gameObject.AddComponent<LayoutElement>();
-            qRowLe.flexibleWidth = 0f;
-            qRowLe.preferredWidth = baseW;
-
-            var qPanel = UIHelpers.FindOrCreateRect(
-                parent,
-                UIConstants.QualityPanelName,
-                siblingIndex: qRow.GetSiblingIndex()
-            );
-            qRow.SetSiblingIndex(qPanel.GetSiblingIndex() + 1);
-            UIHelpers.SetupPanel(qPanel, pickAll.image, baseH); // 复用 pickAll 的 9-slice 样式与宽度
-            var qTitle = UIHelpers.CreateOrUpdateTitleTMP(
-                qPanel.gameObject,
-                UIConstants.QualityTitleName,
-                i18n.Quality.Title
-            );
-            UIHelpers.ApplyRefFont(qTitle, pickAll);
-
-            // Value：Panel + Title + Row
-            var vRow = UIHelpers.FindOrCreateRect(
-                parent,
-                UIConstants.ValueRowName,
-                siblingAfter: qRow.transform
-            );
-            UIHelpers.SetupRow(vRow, baseH);
-            var vRowLe =
-                vRow.GetComponent<LayoutElement>() ?? vRow.gameObject.AddComponent<LayoutElement>();
-            vRowLe.flexibleWidth = 0f;
-            vRowLe.preferredWidth = baseW;
-
-            var vPanel = UIHelpers.FindOrCreateRect(
-                parent,
-                UIConstants.ValuePanelName,
-                siblingIndex: vRow.GetSiblingIndex()
-            );
-            vRow.SetSiblingIndex(vPanel.GetSiblingIndex() + 1);
-            UIHelpers.SetupPanel(vPanel, pickAll.image, baseH);
-            var vTitle = UIHelpers.CreateOrUpdateTitleTMP(
-                vPanel.gameObject,
-                UIConstants.ValueTitleName,
-                i18n.Value.Title
-            );
-            UIHelpers.ApplyRefFont(vTitle, pickAll);
-
-            // ValueWeight：Panel + Title + Row
-            var vwRow = UIHelpers.FindOrCreateRect(
-                parent,
-                UIConstants.ValueWeightRowName,
-                siblingAfter: vRow.transform
-            );
-            UIHelpers.SetupRow(vwRow, baseH);
-            var vwRowLe =
-                vwRow.GetComponent<LayoutElement>()
-                ?? vwRow.gameObject.AddComponent<LayoutElement>();
-            vwRowLe.flexibleWidth = 0f;
-            vwRowLe.preferredWidth = baseW;
-
-            var vwPanel = UIHelpers.FindOrCreateRect(
-                parent,
-                UIConstants.ValueWeightPanelName,
-                siblingIndex: vwRow.GetSiblingIndex()
-            );
-            vwRow.SetSiblingIndex(vwPanel.GetSiblingIndex() + 1);
-            UIHelpers.SetupPanel(vwPanel, pickAll.image, baseH);
-            var vwTitle = UIHelpers.CreateOrUpdateTitleTMP(
-                vwPanel.gameObject,
-                UIConstants.ValueWeightTitleName,
-                i18n.ValueWeight.Title
-            );
-            UIHelpers.ApplyRefFont(vwTitle, pickAll);
-
-            var defaultPalette = DefaultButtonColorPalette;
-
-            // 解析配置范围
-            var cfg = ModConfig.Runtime;
-            var qualityList = ParseRangeCsv(cfg.qualityRange, ModConfigData.Defaults.qualityRange);
-            var valueList = ParseRangeCsv(cfg.valueRange, ModConfigData.Defaults.valueRange);
-            var weightList = ParseRangeCsv(
-                cfg.valueWeightRange,
-                ModConfigData.Defaults.valueWeightRange
-            );
-
-            var qColors = ParseColorCsv(cfg.qualityColor, defaultPalette);
-            var vColors = ParseColorCsv(cfg.valueColor, defaultPalette);
-            var vwColors = ParseColorCsv(cfg.valueWeightColor, defaultPalette);
-
-            // 清理旧按钮
-            PruneRowButtons(qRow, "OKL_Button_Quality_", [.. qualityList]);
-            PruneRowButtons(vRow, "OKL_Button_Value_", [.. valueList]);
-            PruneRowButtons(vwRow, "OKL_Button_ValueWeight_", [.. weightList]);
-
-            // 目标宽度
-            float spacing = UIConstants.ButtonRowSpacing;
-            float qTargetW = UIHelpers.CalcTargetWidth(baseW, spacing, qualityList.Count);
-            float vTargetW = UIHelpers.CalcTargetWidth(baseW, spacing, valueList.Count);
-            float vwTargetW = UIHelpers.CalcTargetWidth(baseW, spacing, weightList.Count);
-            float targetH = baseH;
-
-            var refShadow = pickAll.GetComponent<Shadow>();
-            var refOutline = pickAll.GetComponent<Outline>();
-
-            // 质量按钮
-            for (int i = 0; i < qualityList.Count; i++)
-            {
-                int minQ = qualityList[i];
-                string name = $"OKL_Button_Quality_{minQ}";
-                var color = GetButtonColor(qColors, i);
-                CreateFilterButton(
-                    qRow,
-                    pickAll,
-                    qTargetW,
-                    targetH,
-                    name,
-                    color,
-                    minQ,
-                    refShadow,
-                    refOutline,
-                    lv,
-                    QualityChecker,
-                    i18n.Quality.Button,
-                    i18n.Quality.ButtonFontSize,
-                    i
-                );
-            }
-
-            // 价值按钮
-            for (int i = 0; i < valueList.Count; i++)
-            {
-                int minV = valueList[i];
-                string name = $"OKL_Button_Value_{minV}";
-                var color = GetButtonColor(vColors, i);
-                CreateFilterButton(
-                    vRow,
-                    pickAll,
-                    vTargetW,
-                    targetH,
-                    name,
-                    color,
-                    minV,
-                    refShadow,
-                    refOutline,
-                    lv,
-                    ValueChecker,
-                    i18n.Value.Button,
-                    i18n.Value.ButtonFontSize,
-                    i
-                );
-            }
-
-            // 价重比按钮
-            for (int i = 0; i < weightList.Count; i++)
-            {
-                int minW = weightList[i];
-                string name = $"OKL_Button_ValueWeight_{minW}";
-                var color = GetButtonColor(vwColors, i);
-                CreateFilterButton(
-                    vwRow,
-                    pickAll,
-                    vwTargetW,
-                    targetH,
-                    name,
-                    color,
-                    minW,
-                    refShadow,
-                    refOutline,
-                    lv,
-                    ValueWeightChecker,
-                    i18n.ValueWeight.Button,
-                    i18n.ValueWeight.ButtonFontSize,
-                    i
-                );
-            }
-
-            // 显隐控制
-            qPanel.gameObject.SetActive(cfg.showQuality);
-            qRow.gameObject.SetActive(cfg.showQuality);
-            vPanel.gameObject.SetActive(cfg.showValue);
-            vRow.gameObject.SetActive(cfg.showValue);
-            vwPanel.gameObject.SetActive(cfg.showValueWeight);
-            vwRow.gameObject.SetActive(cfg.showValueWeight);
-
-            if (parent.Find("OKL_BottomSpacer") == null)
-            {
-                var sp = new GameObject("OKL_BottomSpacer", typeof(RectTransform));
-                var spRt = sp.GetComponent<RectTransform>();
-                spRt.SetParent(parent, false);
-                spRt.anchorMin = new Vector2(0f, 0.5f);
-                spRt.anchorMax = new Vector2(1f, 0.5f);
-                spRt.pivot = new Vector2(0.5f, 0.5f);
-                spRt.sizeDelta = Vector2.zero;
-                var le = sp.AddComponent<LayoutElement>();
-                le.flexibleWidth = 1f;
-                le.preferredHeight = UIConstants.BottomSpacerHeight;
-                sp.SetActive(true);
-            }
+            ReapplyFromConfig(lv, parent, pickAll);
 
             i18n.RelabelActiveLootViews();
         }
@@ -497,7 +624,7 @@ namespace OneKeyLoot
             int minThreshold,
             Shadow refShadow,
             Outline refOutline,
-            Duckov.UI.LootView lv,
+            LootView lv,
             Func<Item, int> checker,
             Func<int, string> labelBuilder,
             int fontSize,
@@ -507,6 +634,7 @@ namespace OneKeyLoot
             var child = row.Find(name) as RectTransform;
             GameObject go;
             RectTransform r;
+            bool isNew = !child;
             if (child)
             {
                 r = child;
@@ -518,6 +646,7 @@ namespace OneKeyLoot
                 go.name = name;
                 r = go.GetComponent<RectTransform>();
             }
+
             int maxIdx = Mathf.Max(0, row.childCount - 1);
             // 保证按钮的兄弟顺序与排序后的列表索引一致
             r.SetSiblingIndex(Mathf.Clamp(siblingIndex, 0, maxIdx));
@@ -567,14 +696,27 @@ namespace OneKeyLoot
                 bg.color = bgcolor;
             }
 
-            var refHasStyle = refShadow != null || refOutline != null;
-            if (refHasStyle)
+            // 只在新建时拷贝一次样式，避免重复叠加导致变暗
+            if (isNew)
             {
-                UIHelpers.CopyShadowAndOutline(refShadow, refOutline, go);
-            }
-            else
-            {
-                UIHelpers.EnsureDefaultShadow(go);
+                var refHasStyle = refShadow != null || refOutline != null;
+                if (refHasStyle)
+                {
+                    foreach (var s in go.GetComponents<Shadow>())
+                    {
+                        UnityEngine.Object.Destroy(s);
+                    }
+
+                    foreach (var o in go.GetComponents<Outline>())
+                    {
+                        UnityEngine.Object.Destroy(o);
+                    }
+                    UIHelpers.CopyShadowAndOutline(refShadow, refOutline, go);
+                }
+                else
+                {
+                    UIHelpers.EnsureDefaultShadow(go);
+                }
             }
 
             UIHelpers.EnsureSingleCenteredLabel(go, labelBuilder(minThreshold), pickAll, fontSize);
