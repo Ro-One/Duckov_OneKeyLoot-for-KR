@@ -32,6 +32,7 @@ namespace OneKeyLoot
         ];
 
         // 缓存结构 + 全局列表（弱引用，避免持有强引用导致泄漏）
+        // 캐시구조 + 전역 목록 (약한 참조, 강한 참조로 인한 누수 방지)
         private sealed class CacheEntry
         {
             public WeakReference<LootView> LvRef;
@@ -74,6 +75,7 @@ namespace OneKeyLoot
         }
 
         // 创建根节点，所有UI元素全部挂载在根节点下，方便一键控制
+        // 루트 노드 생성, 모든 UI 요소는 루트 노드 아래에 탑재되어 원클릭 제어가 가능합니다.
         private static RectTransform CreateRootNode(RectTransform parent, Transform placeAfter)
         {
             var rt = parent.Find("OKL_Root") as RectTransform;
@@ -84,12 +86,14 @@ namespace OneKeyLoot
                 rt.SetParent(parent, false);
 
                 // 拉伸到父节点宽度（高度由子物体+Layout计算）
+                // 부모 노드 너비로 늘리기 (높이는 자식 오브젝트 + 레이아웃에 의해 계산됨)
                 rt.anchorMin = new Vector2(0f, 0.5f);
                 rt.anchorMax = new Vector2(1f, 0.5f);
                 rt.pivot = new Vector2(0.5f, 0.5f);
                 rt.sizeDelta = Vector2.zero;
 
                 // 让 OKL_Root 作为一个“块”参与父容器的竖直布局与自适应高度
+                // OKL_Root를 "블록"으로 만들어 부모 컨테이너의 수직 레이아웃과 자동 높이에 참여하게 합니다.
                 var vlg = go.AddComponent<VerticalLayoutGroup>();
                 vlg.childControlWidth = true;
                 vlg.childControlHeight = true;
@@ -103,16 +107,19 @@ namespace OneKeyLoot
                 csf.verticalFit = ContentSizeFitter.FitMode.PreferredSize;
 
                 // 可选：占位用的 LayoutElement（不设也行）
+                // 선택 사항: 자리 표시자용 LayoutElement (설정하지 않아도 됨)
                 go.AddComponent<LayoutElement>();
             }
 
             // 把 OKL_Root 放在 PickAll 后面一位（保证整体顺序）
+            // OKL_Root를 PickAll 뒤의 한 위치에 배치 (전체 순서 보장)
             if (placeAfter != null)
             {
                 rt.SetSiblingIndex(placeAfter.GetSiblingIndex() + 1);
             }
 
             // 只要在使用前确保它是激活的
+            // 사용 전에 활성화되어 있는지 확인하기만 하면 됩니다.
             if (!rt.gameObject.activeSelf)
             {
                 rt.gameObject.SetActive(true);
@@ -122,6 +129,7 @@ namespace OneKeyLoot
         }
 
         // 根据 ModConfig 重新渲染计算按钮
+        // ModConfig에 따라 버튼을 다시 렌더링하고 계산합니다.
         private static void ReapplyFromConfig(LootView lv, RectTransform parent, Button pickAll)
         {
             if (!parent || !pickAll)
@@ -134,6 +142,7 @@ namespace OneKeyLoot
             var root = LookupRoot(lv, parent, pickAll);
 
             // —— 计算基准宽高 ——
+            // —— 기준 너비 및 높이 계산 ——
             var lePick =
                 pickAll.GetComponent<LayoutElement>()
                 ?? pickAll.gameObject.AddComponent<LayoutElement>();
@@ -158,6 +167,7 @@ namespace OneKeyLoot
             */
 
             // —— 找到/创建三组容器：Panel + Title + Row ——
+            // —— 세 그룹 컨테이너 찾기/생성: 패널 + 제목 + 행 ——
             var qPanel = UIHelpers.FindOrCreateRect(root, UIConstants.QualityPanelName);
             UIHelpers.SetupPanel(qPanel, pickAll.image, baseH);
             var qTitle = UIHelpers.CreateOrUpdateTitleTMP(
@@ -217,6 +227,7 @@ namespace OneKeyLoot
             ).preferredWidth = baseW;
 
             // —— 解析当前配置 ——
+            // —— 현재 구성 분석 ——
             var cfg = ModConfig.Runtime;
             var defaultPalette = DefaultButtonColorPalette;
             var qualityList = ParseRangeCsv(cfg.qualityRange, ModConfigData.Defaults.qualityRange);
@@ -231,11 +242,13 @@ namespace OneKeyLoot
             var vwColors = ParseColorCsv(cfg.valueWeightColor, defaultPalette);
 
             // —— 清掉不需要的旧按钮，并补齐新按钮 ——
+            // —— 필요하지 않은 이전 버튼을 제거하고 새 버튼을 보완합니다 ——
             PruneRowButtons(qRow, "OKL_Button_Quality_", [.. qualityList]);
             PruneRowButtons(vRow, "OKL_Button_Value_", [.. valueList]);
             PruneRowButtons(vwRow, "OKL_Button_ValueWeight_", [.. valueWeightList]);
 
             // —— 目标宽高与参考样式 ——
+            // —— 대상 너비 및 높이와 참조 스타일 ——
             float spacing = UIConstants.ButtonRowSpacing;
             float qTargetW = UIHelpers.CalcTargetWidth(baseW, spacing, qualityList.Count);
             float vTargetW = UIHelpers.CalcTargetWidth(baseW, spacing, valueList.Count);
@@ -246,6 +259,7 @@ namespace OneKeyLoot
             var refOutline = pickAll.GetComponent<Outline>();
 
             // —— 质量按钮 ——
+            // —— 희귀도 버튼 ——
             for (int i = 0; i < qualityList.Count; i++)
             {
                 int minQ = qualityList[i];
@@ -267,6 +281,7 @@ namespace OneKeyLoot
                 );
             }
             // —— 价值按钮 ——
+            // —— 가치 버튼 ——
             for (int i = 0; i < valueList.Count; i++)
             {
                 int minV = valueList[i];
@@ -288,6 +303,7 @@ namespace OneKeyLoot
                 );
             }
             // —— 价重比按钮 ——
+            // —— 중량 대비 가치 버튼 ——
             for (int i = 0; i < valueWeightList.Count; i++)
             {
                 int minW = valueWeightList[i];
@@ -310,6 +326,7 @@ namespace OneKeyLoot
             }
 
             // —— 显隐统一在“配置变更”时套用 ——
+            // —— 가시성은 "구성 변경" 시에 통합 적용 ——
             qPanel.gameObject.SetActive(cfg.showQuality);
             qRow.gameObject.SetActive(cfg.showQuality);
             vPanel.gameObject.SetActive(cfg.showValue);
@@ -335,6 +352,7 @@ namespace OneKeyLoot
         }
 
         // ✅ 解析颜色 CSV：若任一 token 非法或最终为空 => 回退到默认调色板（最多取 4 个）
+        // ✅ 색상 CSV 구문 분석: 토큰이 잘못되었거나 최종적으로 비어 있는 경우 => 기본 팔레트로 롤백 (최대 4개 가져오기)
         private static List<Color> ParseColorCsv(string csv, IReadOnlyList<Color> fallback)
         {
             const int MaxButtons = 4;
@@ -382,9 +400,11 @@ namespace OneKeyLoot
             item.SelfWeight == 0f ? int.MaxValue : (int)(ValueChecker(item) / item.SelfWeight);
 
         // CSV 解析：失败时回退到默认配置
+        // CSV 구문 분석: 실패 시 기본 구성으로 롤백
         private static List<int> ParseRangeCsv(string csv, string fallbackCsv)
         {
             // 最多显示4个按钮
+            // 최대 4개의 버튼 표시
             const int MaxButtons = 4;
             try
             {
@@ -445,6 +465,7 @@ namespace OneKeyLoot
                 }
 
                 // 从名字解析数值后缀；解析失败也视为应清理的旧节点
+                // 이름에서 숫자 접미사 구문 분석; 구문 분석 실패도 정리해야 할 이전 노드로 간주됩니다.
                 var suffix = name.Substring(prefix.Length);
                 if (!int.TryParse(suffix, out var v) || !keepSet.Contains(v))
                 {
@@ -507,6 +528,7 @@ namespace OneKeyLoot
         }
 
         // 控制根节点显隐
+        // 루트 노드 가시성 제어
         private static void toggleRootNode(RectTransform parent, bool show)
         {
             var root = s_cache.TryGetValue(parent, out var ce) ? ce?.Root : null;
@@ -518,6 +540,8 @@ namespace OneKeyLoot
 
         // 根据parent创建并缓存根节点
         // 所有UI元素全部挂载在根节点下，方便一键控制
+        // parent에 따라 루트 노드를 생성하고 캐시합니다.
+        // 모든 UI 요소는 루트 노드 아래에 탑재되어 원클릭 제어 가능
         private static RectTransform LookupRoot(LootView lv, RectTransform parent, Button pickAll)
         {
             if (s_cache.TryGetValue(parent, out var entry))
@@ -541,6 +565,9 @@ namespace OneKeyLoot
         /// <summary>
         /// 控制战利品界面所有按钮显隐
         /// </summary>
+        /// <koreanSummary>
+        /// 전리품 화면의 모든 버튼 가시성 제어
+        /// </koreanSummary>
         [HarmonyPostfix]
         [HarmonyPatch("RefreshPickAllButton")]
         private static void Postfix_RefreshPickAllButton(object __instance)
@@ -575,6 +602,9 @@ namespace OneKeyLoot
         /// <summary>
         /// 打开战利品界面后创建UI文本、按钮/更新缓存
         /// </summary>
+        /// <koreanSummary>
+        /// 전리품 화면을 연 후 UI 텍스트, 버튼 생성/캐시 업데이트
+        /// </koreanSummary>
         [HarmonyPostfix]
         [HarmonyPatch("OnOpen")]
         private static void Postfix_OnOpen(object __instance)
@@ -603,6 +633,7 @@ namespace OneKeyLoot
 
             var parent = pickAll.transform.parent as RectTransform;
             // 更换场景时parent也会发生变化
+            // 씬을 전환할 때 부모도 변경
             if (!parent || s_cache.ContainsKey(parent))
             {
                 return;
@@ -614,6 +645,7 @@ namespace OneKeyLoot
         }
 #pragma warning restore IDE0051
         // 新增通用按钮创建：质量/价值/价重比 共用
+        // 희귀도/가치/중량 대비 가치 공용 버튼 생성 추가
         private static void CreateFilterButton(
             RectTransform row,
             Button pickAll,
@@ -649,6 +681,7 @@ namespace OneKeyLoot
 
             int maxIdx = Mathf.Max(0, row.childCount - 1);
             // 保证按钮的兄弟顺序与排序后的列表索引一致
+            // 버튼의 형제 순서가 정렬된 목록 인덱스와 일치하는지 확인
             r.SetSiblingIndex(Mathf.Clamp(siblingIndex, 0, maxIdx));
 
             var le = go.GetComponent<LayoutElement>() ?? go.AddComponent<LayoutElement>();
@@ -660,6 +693,7 @@ namespace OneKeyLoot
             le.flexibleHeight = 0f;
 
             // 同步到 RectTransform，确保与 Layout 一致
+            // RectTransform과 동기화하여 레이아웃과 일치하도록 합니다.
             r.SetSizeWithCurrentAnchors(RectTransform.Axis.Horizontal, w);
             r.SetSizeWithCurrentAnchors(RectTransform.Axis.Vertical, h);
 
@@ -697,6 +731,7 @@ namespace OneKeyLoot
             }
 
             // 只在新建时拷贝一次样式，避免重复叠加导致变暗
+            // 신규 생성 시에만 스타일 복사, 반복 누적으로 인한 어두워짐 방지
             if (isNew)
             {
                 var refHasStyle = refShadow != null || refOutline != null;

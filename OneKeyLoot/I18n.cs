@@ -10,6 +10,7 @@ namespace OneKeyLoot
     internal static class i18n
     {
         // ===== 组标识 =====
+        // ===== 그룹 식별자 =====
         public enum LootGroupId
         {
             Config,
@@ -19,6 +20,7 @@ namespace OneKeyLoot
         }
 
         // ===== 文案 Key =====
+        // ===== 텍스트 Key 정의 =====
         public static class Keys
         {
             public static class Config
@@ -58,6 +60,7 @@ namespace OneKeyLoot
         }
 
         // ===== 字体与排版（简单对齐）=====
+        // ===== 글꼴 레이아웃 (간단 정렬) =====
         public static class Typography
         {
             public static readonly TextAlignmentOptions TitleAlign = TextAlignmentOptions.Midline;
@@ -65,6 +68,7 @@ namespace OneKeyLoot
         }
 
         // ===== 语言包：文本 + 元数据 =====
+        // ===== 언어팩 : 텍스트 + 메타데이터 =====
         private sealed class LanguagePack
         {
             public readonly Dictionary<string, string> Texts = new(StringComparer.Ordinal);
@@ -84,6 +88,7 @@ namespace OneKeyLoot
         }
 
         // ===== 内置语言包 =====
+        // ===== 내장언어팩 (필요시 확장 가능) =====
         private static readonly LanguagePack PackEN = new LanguagePack()
             // Config
             .AddText(Keys.Config.ShowCollectAll, "Display [Collect All]")
@@ -140,6 +145,7 @@ namespace OneKeyLoot
         private static LanguagePack s_CurrentPack = PackEN;
 
         // ===== 组配置 =====
+        // ===== 그룹 구성 (UI 주소지정, 명명 규칙) =====
         private sealed class ButtonGroupConfig(
             LootGroupId id,
             string titleKey,
@@ -197,6 +203,7 @@ namespace OneKeyLoot
         ];
 
         // ===== 每组缓存（避免频繁查字典/装箱）=====
+        // ===== 각 그룹 캐시 (잦은 딕셔너리 조회/박싱 방지)
         private sealed class GroupCache
         {
             public string Title;
@@ -209,6 +216,7 @@ namespace OneKeyLoot
         private static readonly Dictionary<LootGroupId, GroupCache> s_GroupCaches = [];
 
         // ===== Config 文案缓存 =====
+        // ===== Config 복사 캐싱 =====
         private sealed class ConfigCache
         {
             public string ShowCollectAllLabel;
@@ -226,6 +234,7 @@ namespace OneKeyLoot
         private static ConfigCache s_Config;
 
         // ===== 外部访问：Config 与两个分组 =====
+        // ===== 외부접근 : Config 및 3개 그룹
         public static class Config
         {
             public static string ShowCollectAllLabel => s_Config.ShowCollectAllLabel;
@@ -268,9 +277,11 @@ namespace OneKeyLoot
         }
 
         // ===== 生命周期 =====
+        // ===== 생명주기 =====
         public static void Init()
         {
             // 确保不会重复订阅
+            // 중복 구독되지 않도록 확인
             LocalizationManager.OnSetLanguage -= OnSetLanguage;
             LocalizationManager.OnSetLanguage += OnSetLanguage;
 
@@ -285,6 +296,7 @@ namespace OneKeyLoot
         private static void OnSetLanguage(SystemLanguage lang)
         {
             // 简体/繁体 → 中文；其余 → 英文
+            // 간체/번체 -> 중국어팩; 한국어 -> 한국어 팩; 그외 -> 영어팩
             s_CurrentPack =
                 (
                     lang == SystemLanguage.ChineseSimplified
@@ -294,12 +306,14 @@ namespace OneKeyLoot
                     : PackEN;
 
             // 推送覆盖文本给全局（仅 Texts；Meta 仅内部使用）
+            // 텍스트 전역 덮어쓰기 (Texts만 해당; Meta는 내부 전용)
             foreach (var kv in s_CurrentPack.Texts)
             {
                 LocalizationManager.SetOverrideText(kv.Key, kv.Value);
             }
 
             // 重建组缓存（键必定存在）
+            // 그룹 캐시 재구성 (키는 반드시 존재)
             s_GroupCaches.Clear();
             foreach (var g in s_Groups)
             {
@@ -312,6 +326,7 @@ namespace OneKeyLoot
             }
 
             // Config 文案缓存
+            // Config 텍스트 캐싱
             s_Config = new ConfigCache
             {
                 ShowCollectAllLabel = s_CurrentPack.Texts[Keys.Config.ShowCollectAll],
@@ -327,10 +342,12 @@ namespace OneKeyLoot
             };
 
             // 热刷新所有已打开的 LootView
+            // 열린 모든 LootView 핫 리프레시
             RelabelActiveLootViews();
         }
 
         // ===== UI 刷新（扫描按钮名后缀）=====
+        // ===== UI 새로고침 (버튼 이름 접미사 스캔) =====
         public static void RelabelActiveLootViews()
         {
             var all = Resources.FindObjectsOfTypeAll<LootView>();
@@ -351,9 +368,11 @@ namespace OneKeyLoot
 
         private static void UpdateGroupUI(RectTransform root, ButtonGroupConfig g)
         {
+            // fallback 없음: 직접 인덱스
             var cache = s_GroupCaches[g.Id];
 
             // 标题
+            // 제목
             var titleRt = root.Find(g.TitleNodeName) as RectTransform;
             if (titleRt)
             {
@@ -371,6 +390,7 @@ namespace OneKeyLoot
             }
 
             // 行内按钮
+            // 행 내 버튼
             var row = root.Find(g.RowName) as RectTransform;
             if (!row)
             {
@@ -394,6 +414,7 @@ namespace OneKeyLoot
                 }
 
                 // 解析阈值
+                // 임계값 파싱
                 if (!int.TryParse(name.Substring(prefix.Length), out var v))
                 {
                     continue;

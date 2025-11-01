@@ -8,6 +8,9 @@ namespace OneKeyLoot
     /// <summary>
     /// 配置数据
     /// </summary>
+    /// <koreanSummary>
+    /// 구성 데이터
+    /// </koreanSummary>
     [Serializable]
     public class ModConfigData
     {
@@ -32,17 +35,23 @@ namespace OneKeyLoot
     /// <summary>
     /// 配置中心：集中管理 Mod 的设置项注册、加载/保存、运行时快照与事件绑定
     /// </summary>
+    /// <koreanSummary>
+    /// 구성 센터: Mod의 설정 항목 등록, 로드/저장, 런타임 스냅샷 및 이벤트 바인딩을 중앙 집중식으로 관리
+    /// </koreanSummary>
     public static class ModConfig
     {
         public const string DisplayName = "一键拾取战利品 One-Key Loot";
 
         // 配置变更事件
+        // 구성 변경 이벤트
         public static event Action RuntimeChanged;
 
         // 内部持久化实体（与 ModConfigAPI 交互）
+        // 내부 영구 엔터티 (ModConfigAPI와 상호 작용)
         private static readonly ModConfigData _config = new();
 
         // 运行时快照（供运行期读取，不直接与 UI 绑定）
+        // 런타임 스냅샷 (런타임 읽기 전용, UI에 직접 바인딩되지 않음)
         private static ModConfigData s_RuntimeConfig = new();
         internal static ModConfigData Runtime => s_RuntimeConfig ??= new ModConfigData();
 
@@ -111,6 +120,7 @@ namespace OneKeyLoot
             ModConfigAPI.SafeAddOnOptionsChangedDelegate(OnModConfigOptionsChanged);
 
             // 倒序添加以保证显示顺序
+            // 뒤에서부터 추가하여 표시 순서 보장
             ModConfigAPI.SafeAddInputWithSlider(
                 DisplayName,
                 "valueWeightColor",

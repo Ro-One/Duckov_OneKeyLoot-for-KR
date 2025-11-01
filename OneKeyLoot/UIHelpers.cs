@@ -7,9 +7,13 @@ namespace OneKeyLoot
     /// <summary>
     /// 通用 UI 辅助方法
     /// </summary>
+    /// <koreanSummary>
+    /// 일반 UI 도우미 메서드
+    /// </koreanSummary>
     internal static class UIHelpers
     {
         // 行容器：水平布局
+        // 행 컨테이너: 수평 레이아웃
         internal static void SetupRow(RectTransform row, float baseH)
         {
             var layout =
@@ -17,18 +21,19 @@ namespace OneKeyLoot
                 ?? row.gameObject.AddComponent<HorizontalLayoutGroup>();
             layout.childForceExpandWidth = false;
             layout.childForceExpandHeight = false;
-            layout.childControlWidth = true; // 让行宽由子按钮的 preferredWidth 控制
+            layout.childControlWidth = true; // 让行宽由子按钮的 preferredWidth 控制 // 행 너비가 자식 버튼의 preferredWidth에 의해 제어되도록 설정
             layout.childControlHeight = false;
             layout.spacing = UIConstants.ButtonRowSpacing;
             layout.padding = new RectOffset(0, 0, 0, 0);
 
             var le =
                 row.GetComponent<LayoutElement>() ?? row.gameObject.AddComponent<LayoutElement>();
-            le.flexibleWidth = 0f; // 行不再被父容器拉满
+            le.flexibleWidth = 0f; // 行不再被父容器拉满 // 행이 더 이상 상위 컨테이너에 의해 확장되지 않음
             le.preferredHeight = baseH;
         }
 
         // 标题面板：对齐与背景（复用 pickAll 的样式）
+        // 제목 패널: 정렬 및 배경 (pickAll 스타일 재사용)
         internal static void SetupPanel(RectTransform panel, Image refImage, float baseH)
         {
             if (!panel)
@@ -37,11 +42,13 @@ namespace OneKeyLoot
             }
 
             // 没有 LayoutElement 则补充，避免 NRE
+            // LayoutElement가 없으면 NRE를 방지하기 위해 추가
             var le =
                 panel.GetComponent<LayoutElement>()
                 ?? panel.gameObject.AddComponent<LayoutElement>();
 
             // 与“全部拾取”同宽
+            // "모두 선택"과 동일한 너비
             float baseW = 0f;
             if (refImage != null && refImage.rectTransform != null)
             {
@@ -57,6 +64,7 @@ namespace OneKeyLoot
             le.preferredHeight = Mathf.Round(baseH * 0.90f);
 
             // 没有 Image 则补充，并复用 pickAll 的 9-slice
+            // Image가 없으면 추가하고 pickAll의 9-slice를 재사용
             var img = panel.GetComponent<Image>() ?? panel.gameObject.AddComponent<Image>();
             if (refImage != null)
             {
@@ -70,6 +78,7 @@ namespace OneKeyLoot
         }
 
         // 创建/更新标题 TMP
+        // 제목 TMP 생성/업데이트
         internal static RectTransform CreateOrUpdateTitleTMP(
             GameObject host,
             string nodeName,
@@ -110,6 +119,7 @@ namespace OneKeyLoot
             tmp.raycastTarget = false;
 
             // 深色阴影提升可读性
+            // 가독성을 높이기 위한 짙은 그림자
             var sh = tmp.gameObject.GetComponent<Shadow>() ?? tmp.gameObject.AddComponent<Shadow>();
             sh.effectColor = new Color(0f, 0f, 0f, 0.5f);
             sh.effectDistance = new Vector2(2f, -2f);

@@ -13,10 +13,10 @@ namespace OneKeyLoot
             return new Color(0.30f, 0.69f, 0.31f, 1f);
         }
 
-        public static readonly Color Color2 = Hex("#4CAF4F"); // ≥2 草绿
-        public static readonly Color Color3 = Hex("#42A5F5"); // ≥3 天蓝
-        public static readonly Color Color4 = Hex("#BA68C6"); // ≥4 柔紫
-        public static readonly Color Color5 = Hex("#BF7F33"); // ≥5 暖橙
+        public static readonly Color Color2 = Hex("#4CAF4F"); // ≥2 草绿 // ≥2 초록
+        public static readonly Color Color3 = Hex("#42A5F5"); // ≥3 天蓝 // ≥3 하늘
+        public static readonly Color Color4 = Hex("#BA68C6"); // ≥4 柔紫 // ≥4 보라
+        public static readonly Color Color5 = Hex("#BF7F33"); // ≥5 暖橙 // ≥5 주황
         public const string LabelName = "OKL_Label";
         public const float ButtonRowSpacing = 8f;
         public const float BottomSpacerHeight = 16f;
