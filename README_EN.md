@@ -1,6 +1,6 @@
 # Escape from Duckov Mod —— One-Key Loot
 
-[中文](README.md) | English
+[中文](README.md) | English | [한국어](README_KR.md)
 
 ## Steam WorkShop
 

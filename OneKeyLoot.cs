@@ -28,10 +28,13 @@ namespace OneKeyLoot
             return new Color(0.30f, 0.69f, 0.31f, 1f);
         }
 
-        public static readonly Color Color2 = Hex("#4CAF4F"); // ≥2 草绿
-        public static readonly Color Color3 = Hex("#42A5F5"); // ≥3 天蓝
-        public static readonly Color Color4 = Hex("#BA68C6"); // ≥4 柔紫
-        public static readonly Color Color5 = Hex("#BF7F33"); // ≥5 暖橙
+        public static readonly Color Color0 = Hex("#FFFFFF"); // ≥0 하양
+        public static readonly Color Color1 = Hex("#7cff7c"); // ≥1 연두
+        public static readonly Color Color2 = Hex("#7cd5ff"); // ≥2 하늘
+        public static readonly Color Color3 = Hex("#d0acff"); // ≥3 연보라
+        public static readonly Color Color4 = Hex("#ffdc24"); // ≥4 노랑
+        public static readonly Color Color5 = Hex("#ff5858"); // ≥5 주황
+        public static readonly Color Color6 = Hex("#bb0000"); // ≥6 빨강
         public const string LabelName = "OKL_Label";
         public const float ButtonRowSpacing = 8f;
         public const float BottomSpacerHeight = 16f;
@@ -59,6 +62,7 @@ namespace OneKeyLoot
         public bool showQuality = true;
         public bool showValue = true;
         public bool showValueWeight = true;
+        public bool autoChangeQualityColor = true;
         public string qualityRange = "2,3,4,5";
         public string valueRange = "100,500,1000";
         public string valueWeightRange = "500,2500,5000";
@@ -133,6 +137,7 @@ namespace OneKeyLoot
             s_RuntimeConfig.showQuality = src.showQuality;
             s_RuntimeConfig.showValue = src.showValue;
             s_RuntimeConfig.showValueWeight = src.showValueWeight;
+            s_RuntimeConfig.autoChangeQualityColor = src.autoChangeQualityColor;
             s_RuntimeConfig.qualityRange = src.qualityRange;
             s_RuntimeConfig.valueRange = src.valueRange;
             s_RuntimeConfig.valueWeightRange = src.valueWeightRange;
@@ -169,6 +174,7 @@ namespace OneKeyLoot
             ModConfigAPI.SafeAddOnOptionsChangedDelegate(OnModConfigOptionsChanged);
 
             // 倒序添加以保证显示顺序
+            // 역순으로 추가하여 표시 순서 보장
             ModConfigAPI.SafeAddInputWithSlider(
                 Mod_DisplayName,
                 "valueWeightColor",
@@ -220,6 +226,12 @@ namespace OneKeyLoot
                 typeof(string),
                 config.qualityColor,
                 null
+            );
+            ModConfigAPI.SafeAddBoolDropdownList(
+                Mod_DisplayName,
+                "autoChangeQualityColor",
+                i18n.Config.AutoChangeQualityColorLabel,
+                config.autoChangeQualityColor
             );
             ModConfigAPI.SafeAddInputWithSlider(
                 Mod_DisplayName,
@@ -297,6 +309,11 @@ namespace OneKeyLoot
                 "valueWeightRange",
                 config.valueWeightRange
             );
+            config.autoChangeQualityColor = ModConfigAPI.SafeLoad<bool>(
+                Mod_DisplayName,
+                "autoChangeQualityColor",
+                config.autoChangeQualityColor
+            );
             config.qualityColor = ModConfigAPI.SafeLoad<string>(
                 Mod_DisplayName,
                 "qualityColor",
@@ -330,24 +347,35 @@ namespace OneKeyLoot
 
             private static readonly Color[] DefaultButtonColorPalette =
             [
+                UIConstants.Color1,
+                UIConstants.Color2,
+                UIConstants.Color3,
+                UIConstants.Color4,
+            ];
+            private static readonly Color[] AutoQualityColorPalette =
+            [
+                UIConstants.Color0,
+                UIConstants.Color1,
                 UIConstants.Color2,
                 UIConstants.Color3,
                 UIConstants.Color4,
                 UIConstants.Color5,
+                UIConstants.Color6,
             ];
 
             // ✅ 解析颜色 CSV：若任一 token 非法或最终为空 => 回退到默认调色板（最多取 4 个）
-            private static List<Color> ParseColorCsv(string csv, IReadOnlyList<Color> fallback)
+            // ✅ 색상 CSV 구문 분석: 토큰이 잘못되었거나 최종적으로 비어 있는 경우 => 기본 팔레트로 돌아가기(최대 4개 가져오기)
+            private static List<Color> ParseColorCsv(string scv, IReadOnlyList<Color> fallback)
             {
                 const int MaxButtons = 4;
                 try
                 {
-                    if (string.IsNullOrWhiteSpace(csv))
+                    if (string.IsNullOrWhiteSpace(scv))
                     {
                         return [.. fallback.Take(MaxButtons)];
                     }
 
-                    var tokens = csv.Split([',', ';', ' '], StringSplitOptions.RemoveEmptyEntries);
+                    var tokens = scv.Split([',', ';', ' '], StringSplitOptions.RemoveEmptyEntries);
                     var list = new List<Color>(tokens.Length);
                     bool invalid = false;
                     foreach (var raw in tokens)
@@ -374,6 +402,48 @@ namespace OneKeyLoot
                 }
             }
 
+            private static List<Color> ParseQualityColorCsvByRange(string range, IReadOnlyList<Color> fallback)
+            {
+                const int MaxButtons = 4;
+                try
+                {
+                    if (string.IsNullOrWhiteSpace(range))
+                    {
+                        Debug.Log("[OneKeyLoot]: quality color range is empty, using fallback");
+                        return [.. fallback.Take(MaxButtons)];
+                    }
+
+                    var tokens = range.Split([',', ';', ' '], StringSplitOptions.RemoveEmptyEntries);
+                    var list = new List<Color>(tokens.Length);
+                    bool invalid = false;
+                    foreach (var raw in tokens)
+                    {
+                        if (int.TryParse(raw.Trim(), out var v))
+                        {
+                            list.Add(AutoQualityColorPalette[v% AutoQualityColorPalette.Length]);
+                            Debug.Log($"[OneKeyLoot]: quality color for range {v} parsed");
+                        }
+                        else
+                        {
+                            invalid = true;
+                            break;
+                        }
+                    }
+                    if (invalid || list.Count == 0)
+                    {
+                        Debug.Log("[OneKeyLoot]: quality color range invalid, using fallback");
+                        return [.. fallback.Take(MaxButtons)];
+                    }
+                    Debug.Log("[OneKeyLoot]: quality color range parsed successfully");
+                    return [.. list.Take(MaxButtons)];
+                }
+                catch
+                {
+                    Debug.Log("[OneKeyLoot]: quality color range parse exception, using fallback");
+                    return [.. fallback.Take(MaxButtons)];
+                }
+            }
+
             private static Color GetButtonColor(IReadOnlyList<Color> palette, int ordinal) =>
                 palette[Mathf.Abs(ordinal) % Mathf.Max(1, palette.Count)];
 
@@ -384,9 +454,11 @@ namespace OneKeyLoot
                 (int)(ValueChecker(item) / item.SelfWeight);
 
             // CSV 解析：失败时回退到默认配置
+            // CSV 구문 분석: 실패 시 기본 구성으로 돌아가기
             private static List<int> ParseRangeCsv(string csv, string fallbackCsv)
             {
                 // 最多显示4个按钮
+                // 최대 4개의 버튼 표시
                 const int MaxButtons = 4;
                 try
                 {
@@ -450,6 +522,7 @@ namespace OneKeyLoot
                     }
 
                     // 从名字解析数值后缀；解析失败也视为应清理的旧节点
+                    // 이름에서 숫자 접미사 구문 분석; 구문 분석 실패도 정리해야 하는 이전 노드로 간주
                     var suffix = name.Substring(prefix.Length);
                     if (!int.TryParse(suffix, out var v) || !keepSet.Contains(v))
                     {
@@ -579,6 +652,7 @@ namespace OneKeyLoot
                 }
 
                 // 基于 pickAll 推导控件基准宽高（布局未刷新时使用 preferred 值）
+                // pickAll 기준 너비와 높이를 기반으로 컨트롤 유추(레이아웃이 새로 고쳐지지 않은 경우 선호 값 사용)
                 var lePick =
                     pickAll.GetComponent<LayoutElement>()
                     ?? pickAll.gameObject.AddComponent<LayoutElement>();
@@ -602,6 +676,7 @@ namespace OneKeyLoot
                 }
 
                 // Quality：Panel + Title + Row
+                // 희귀도: Panel + Title + Row
                 var qRow = FindOrCreateRect(
                     parent,
                     UIConstants.QualityRowName,
@@ -609,6 +684,7 @@ namespace OneKeyLoot
                 );
                 SetupRow(qRow, baseH);
                 // 行宽固定为与 pickAll 一致，避免被父容器拉满
+                // 행 너비는 pickAll과 동일하게 고정되어 부모 컨테이너에 의해 채워지는 것을 방지
                 var qRowLe =
                     qRow.GetComponent<LayoutElement>()
                     ?? qRow.gameObject.AddComponent<LayoutElement>();
@@ -621,7 +697,7 @@ namespace OneKeyLoot
                     siblingIndex: qRow.GetSiblingIndex()
                 );
                 qRow.SetSiblingIndex(qPanel.GetSiblingIndex() + 1);
-                SetupPanel(qPanel, pickAll.image, baseH); // 复用 pickAll 的 9-slice 样式与宽度
+                SetupPanel(qPanel, pickAll.image, baseH); // 复用 pickAll 的 9-slice 样式与宽度 // pickAll의 9-slice 스타일과 너비 재사용
                 var qTitle = CreateOrUpdateTitleTMP(
                     qPanel.gameObject,
                     UIConstants.QualityTitleName,
@@ -630,6 +706,7 @@ namespace OneKeyLoot
                 ApplyRefFont(qTitle, pickAll);
 
                 // Value：Panel + Title + Row
+                // 가치: Panel + Title + Row
                 var vRow = FindOrCreateRect(
                     parent,
                     UIConstants.ValueRowName,
@@ -657,6 +734,7 @@ namespace OneKeyLoot
                 ApplyRefFont(vTitle, pickAll);
 
                 // ValueWeight：Panel + Title + Row
+                // 무게 대비 가치: Panel + Title + Row
                 var vwRow = FindOrCreateRect(
                     parent,
                     UIConstants.ValueWeightRowName,
@@ -684,27 +762,45 @@ namespace OneKeyLoot
                 ApplyRefFont(vwTitle, pickAll);
 
                 var defaultPalette = DefaultButtonColorPalette;
-                // 解析配置范围
-                var cfg = RuntimeConfig;
+                var cfg = RuntimeConfig; // 解析配置范围 // 구성 범위 구문 분석
                 var qualityList = ParseRangeCsv(
                     cfg.qualityRange,
                     DefaultConfig.Defaults.qualityRange
                 );
-                var valueList = ParseRangeCsv(cfg.valueRange, DefaultConfig.Defaults.valueRange);
+                var valueList = ParseRangeCsv(
+                    cfg.valueRange,
+                    DefaultConfig.Defaults.valueRange
+                );
                 var weightList = ParseRangeCsv(
                     cfg.valueWeightRange,
                     DefaultConfig.Defaults.valueWeightRange
                 );
-                var qColors = ParseColorCsv(cfg.qualityColor, defaultPalette);
-                var vColors = ParseColorCsv(cfg.valueColor, defaultPalette);
-                var vwColors = ParseColorCsv(cfg.valueWeightColor, defaultPalette);
+                
+                var qColors = new List<Color>();
+                if (cfg.autoChangeQualityColor)
+                {
+                    Debug.Log("[OneKeyLoot]: Using auto quality color palette");
+                    qColors = ParseQualityColorCsvByRange(
+                        cfg.qualityRange,
+                        defaultPalette
+                    );
+                }
+                else
+                {
+                    Debug.Log("[OneKeyLoot]: Using custom quality color palette");
+                    qColors = ParseColorCsv(cfg.qualityColor, defaultPalette);
+                }
+                List<Color> vColors = ParseColorCsv(cfg.valueColor, defaultPalette);
+                List<Color> vwColors = ParseColorCsv(cfg.valueWeightColor, defaultPalette);
 
                 // 清理旧按钮
+                // 이전 버튼 정리
                 PruneRowButtons(qRow, "OKL_Button_Quality_", [.. qualityList]);
                 PruneRowButtons(vRow, "OKL_Button_Value_", [.. valueList]);
                 PruneRowButtons(vwRow, "OKL_Button_ValueWeight_", [.. weightList]);
 
                 // 目标宽度
+                // 목표 너비
                 float spacing = UIConstants.ButtonRowSpacing;
                 float qTargetW = CalcTargetWidth(baseW, spacing, qualityList.Count);
                 float vTargetW = CalcTargetWidth(baseW, spacing, valueList.Count);
@@ -715,6 +811,7 @@ namespace OneKeyLoot
                 var refOutline = pickAll.GetComponent<Outline>();
 
                 // 质量按钮
+                // 희귀도 버튼
                 for (int i = 0; i < qualityList.Count; i++)
                 {
                     int minQ = qualityList[i];
@@ -739,6 +836,7 @@ namespace OneKeyLoot
                 }
 
                 // 价值按钮
+                // 가치 버튼
                 for (int i = 0; i < valueList.Count; i++)
                 {
                     int minV = valueList[i];
@@ -763,6 +861,7 @@ namespace OneKeyLoot
                 }
 
                 // 价值权重按钮（价值/重量）
+                //무게 대비 가치 버튼(가치/무게)
                 for (int i = 0; i < weightList.Count; i++)
                 {
                     int minW = weightList[i];
@@ -787,6 +886,7 @@ namespace OneKeyLoot
                 }
 
                 // 显隐控制
+                // 가시성 제어
                 qPanel.gameObject.SetActive(cfg.showQuality);
                 qRow.gameObject.SetActive(cfg.showQuality);
                 vPanel.gameObject.SetActive(cfg.showValue);
@@ -813,6 +913,7 @@ namespace OneKeyLoot
             }
 
             // 行容器：水平布局
+            // 행 컨테이너: 수평 레이아웃
             private static void SetupRow(RectTransform row, float baseH)
             {
                 var layout =
@@ -820,7 +921,7 @@ namespace OneKeyLoot
                     ?? row.gameObject.AddComponent<HorizontalLayoutGroup>();
                 layout.childForceExpandWidth = false;
                 layout.childForceExpandHeight = false;
-                layout.childControlWidth = true; // 让行宽由子按钮的 preferredWidth 控制
+                layout.childControlWidth = true; // 让行宽由子按钮的 preferredWidth 控制 // 자식 버튼의 preferredWidth에 의해 행 너비 제어
                 layout.childControlHeight = false;
                 layout.spacing = UIConstants.ButtonRowSpacing;
                 layout.padding = new RectOffset(0, 0, 0, 0);
@@ -828,11 +929,12 @@ namespace OneKeyLoot
                 var le =
                     row.GetComponent<LayoutElement>()
                     ?? row.gameObject.AddComponent<LayoutElement>();
-                le.flexibleWidth = 0f; // 行不再被父容器拉满
+                le.flexibleWidth = 0f; // 行不再被父容器拉满 // 행이 더 이상 부모 컨테이너에 의해 채워지지 않음
                 le.preferredHeight = baseH;
             }
 
             // 标题面板：对齐与背景（复用 pickAll 的样式）
+            // 제목 패널: 정렬 및 배경(pickAll 스타일 재사용)
             private static void SetupPanel(RectTransform panel, Image refImage, float baseH)
             {
                 if (!panel)
@@ -841,11 +943,13 @@ namespace OneKeyLoot
                 }
 
                 // 没有 LayoutElement 则补充，避免 NRE
+                // LayoutElement가 없으면 NRE를 방지하기 위해 보충
                 var le =
                     panel.GetComponent<LayoutElement>()
                     ?? panel.gameObject.AddComponent<LayoutElement>();
 
                 // 与“全部拾取”同宽
+                // "일괄 수집"과 동일한 너비
                 float baseW = 0f;
                 if (refImage != null && refImage.rectTransform != null)
                 {
@@ -861,6 +965,7 @@ namespace OneKeyLoot
                 le.preferredHeight = Mathf.Round(baseH * 0.90f);
 
                 // 没有 Image 则补充，并复用 pickAll 的 9-slice
+                // Image가 없으면 보충하고 pickAll의 9-slice 재사용
                 var img = panel.GetComponent<Image>() ?? panel.gameObject.AddComponent<Image>();
                 if (refImage != null)
                 {
@@ -874,6 +979,7 @@ namespace OneKeyLoot
             }
 
             // 创建/更新标题 TMP
+            // 제목 TMP 생성/업데이트
             private static RectTransform CreateOrUpdateTitleTMP(
                 GameObject host,
                 string nodeName,
@@ -915,6 +1021,7 @@ namespace OneKeyLoot
                 tmp.raycastTarget = false;
 
                 // 深色阴影提升可读性
+                // 가독성 향상을 위한 다크 섀도우
                 var sh =
                     tmp.gameObject.GetComponent<Shadow>() ?? tmp.gameObject.AddComponent<Shadow>();
                 sh.effectColor = new Color(0f, 0f, 0f, 0.5f);
@@ -1073,6 +1180,7 @@ namespace OneKeyLoot
             }
 
             // 新增通用按钮创建：质量/价值/价值权重 共用
+            // 새로운 일반 버튼 생성: 희귀도/가치/무게 대비 가치 공용
             private static void CreateFilterButton(
                 RectTransform row,
                 Button pickAll,
@@ -1106,6 +1214,7 @@ namespace OneKeyLoot
                 }
                 int maxIdx = Mathf.Max(0, row.childCount - 1);
                 // 保证按钮的兄弟顺序与排序后的列表索引一致
+                // 버튼의 형제 순서가 정렬된 목록 인덱스와 일치하는지 확인
                 r.SetSiblingIndex(Mathf.Clamp(siblingIndex, 0, maxIdx));
 
                 var le = go.GetComponent<LayoutElement>() ?? go.AddComponent<LayoutElement>();
@@ -1117,6 +1226,7 @@ namespace OneKeyLoot
                 le.flexibleHeight = 0f;
 
                 // 同步到 RectTransform，确保与 Layout 一致
+                // RectTransform과 동기화하여 레이아웃과 일치
                 r.SetSizeWithCurrentAnchors(RectTransform.Axis.Horizontal, w);
                 r.SetSizeWithCurrentAnchors(RectTransform.Axis.Vertical, h);
 
