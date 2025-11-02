@@ -17,6 +17,16 @@ namespace OneKeyLoot
         public static readonly Color Color3 = Hex("#42A5F5"); // ≥3 天蓝 // ≥3 하늘
         public static readonly Color Color4 = Hex("#BA68C6"); // ≥4 柔紫 // ≥4 보라
         public static readonly Color Color5 = Hex("#BF7F33"); // ≥5 暖橙 // ≥5 주황
+
+        // used in automatically filling value button background color
+        public static readonly Color aColor0 = Hex("#FFFFFF"); // ≥0 white // ≥0 흰색
+        public static readonly Color aColor1 = Hex("#7cff7c"); // ≥1 yellow green // ≥1 연두
+        public static readonly Color aColor2 = Hex("#7cd5ff"); // ≥2 sky blue // ≥2 하늘
+        public static readonly Color aColor3 = Hex("#d0acff"); // ≥3 lavender // ≥3 연보라
+        public static readonly Color aColor4 = Hex("#ffdc24"); // ≥4 yellow // ≥4 노랑
+        public static readonly Color aColor5 = Hex("#ff5858"); // ≥5 orange // ≥5 주황
+        public static readonly Color aColor6 = Hex("#bb0000"); // ≥6 red // ≥6 빨강
+        
         public const string LabelName = "OKL_Label";
         public const float ButtonRowSpacing = 8f;
         public const float BottomSpacerHeight = 16f;

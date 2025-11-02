@@ -31,6 +31,17 @@ namespace OneKeyLoot
             UIConstants.Color5,
         ];
 
+        private static readonly Color[] AutoFillValueButtonColorPalette =
+        [
+            UIConstants.aColor0,
+            UIConstants.aColor1,
+            UIConstants.aColor2,
+            UIConstants.aColor3,
+            UIConstants.aColor4,
+            UIConstants.aColor5,
+            UIConstants.aColor6,
+        ];
+
         // 缓存结构 + 全局列表（弱引用，避免持有强引用导致泄漏）
         // 캐시구조 + 전역 목록 (약한 참조, 강한 참조로 인한 누수 방지)
         private sealed class CacheEntry
