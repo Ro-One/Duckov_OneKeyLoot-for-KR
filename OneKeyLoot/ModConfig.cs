@@ -154,7 +154,7 @@ namespace OneKeyLoot
             );
             ModConfigAPI.SafeAddBoolDropdownList(
                 DisplayName,
-                "useAutoValueColors",
+                "useAutoValueColor",
                 i18n.Config.UseAutoValueColorLabel,
                 _config.useAutoValueColor
             );
@@ -236,7 +236,11 @@ namespace OneKeyLoot
                 "qualityRange",
                 _config.qualityRange
             );
-            _config.showValue = ModConfigAPI.SafeLoad(DisplayName, "showValue", _config.showValue);
+            _config.showValue = ModConfigAPI.SafeLoad(
+                DisplayName,
+                "showValue",
+                _config.showValue
+            );
             _config.valueRange = ModConfigAPI.SafeLoad(
                 DisplayName,
                 "valueRange",
