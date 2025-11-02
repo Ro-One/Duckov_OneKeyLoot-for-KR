@@ -32,6 +32,7 @@ namespace OneKeyLoot
                 public const string QualityRange = "OKL.Config_QualityRange";
                 public const string ValueRange = "OKL.Config_ValueRange";
                 public const string ValueWeightRange = "OKL.Config_ValueWeightRange";
+                public const string UseAutoValueColor = "OKL.Config_UseAutoValueColor";
                 public const string QualityColor = "OKL.Config_QualityColor";
                 public const string ValueColor = "OKL.Config_ValueColor";
                 public const string ValueWeightColor = "OKL.Config_ValueWeightColor";
@@ -94,14 +95,12 @@ namespace OneKeyLoot
             .AddText(Keys.Config.ShowCollectAll, "Display [Collect All]")
             .AddText(Keys.Config.ShowQuality, "Display [One-Key Loot (by Quality)]")
             .AddText(Keys.Config.ShowValue, "Display [One-Key Loot (by Value)]")
-            .AddText(
-                Keys.Config.ShowValueWeight,
-                "Display [One-Key Loot (by Value per unit Weight)]"
-            )
+            .AddText(Keys.Config.ShowValueWeight, "Display [One-Key Loot (by Value per unit Weight)]")
             .AddText(Keys.Config.QualityRange, "Quality Range (1~9)")
             .AddText(Keys.Config.ValueRange, "Value Range (1+)")
             .AddText(Keys.Config.ValueWeightRange, "Value/Weight Range (1+)")
             .AddText(Keys.Config.QualityColor, "Quality ButtonGroup Color")
+            .AddText(Keys.Config.UseAutoValueColor, "Use Automatically Filling Value Button Color")
             .AddText(Keys.Config.ValueColor, "Value ButtonGroup Color")
             .AddText(Keys.Config.ValueWeightColor, "Value/Weight ButtonGroup Color")
             // Quality
@@ -126,6 +125,7 @@ namespace OneKeyLoot
             .AddText(Keys.Config.ValueRange, "价值范围（1+）")
             .AddText(Keys.Config.ShowValueWeight, "显示【一键收集战利品（按价重比）】")
             .AddText(Keys.Config.ValueWeightRange, "价重比范围 (1+)")
+            .AddText(Keys.Config.UseAutoValueColor, "自动填充价值按钮颜色")
             .AddText(Keys.Config.QualityColor, "品质按钮组颜色")
             .AddText(Keys.Config.ValueColor, "价值按钮组颜色")
             .AddText(Keys.Config.ValueWeightColor, "价重比按钮组颜色")
@@ -151,6 +151,7 @@ namespace OneKeyLoot
             .AddText(Keys.Config.ValueRange, "가치 범위 (1 이상)")
             .AddText(Keys.Config.ShowValueWeight, "【중량 대비 가치 기준 일괄 수집】 표시")
             .AddText(Keys.Config.ValueWeightRange, "중량 대비 가치 범위 (1 이상)")
+            .AddText(Keys.Config.UseAutoValueColor, "가치 버튼 색상 자동 채우기 사용")
             .AddText(Keys.Config.QualityColor, "희귀도 버튼 색상")
             .AddText(Keys.Config.ValueColor, "가치 버튼 색상")
             .AddText(Keys.Config.ValueWeightColor, "중량 대비 가치 버튼 색상")
@@ -251,6 +252,7 @@ namespace OneKeyLoot
             public string QualityRangeLabel;
             public string ValueRangeLabel;
             public string ValueWeightRangeLabel;
+            public string UseAutoValueColorLabel;
             public string QualityColorLabel;
             public string ValueColorLabel;
             public string ValueWeightColorLabel;
@@ -269,6 +271,7 @@ namespace OneKeyLoot
             public static string QualityRangeLabel => s_Config.QualityRangeLabel;
             public static string ValueRangeLabel => s_Config.ValueRangeLabel;
             public static string ValueWeightRangeLabel => s_Config.ValueWeightRangeLabel;
+            public static string UseAutoValueColorLabel => s_Config.UseAutoValueColorLabel;
             public static string QualityColorLabel => s_Config.QualityColorLabel;
             public static string ValueColorLabel => s_Config.ValueColorLabel;
             public static string ValueWeightColorLabel => s_Config.ValueWeightColorLabel;
@@ -376,6 +379,7 @@ namespace OneKeyLoot
                 QualityRangeLabel = s_CurrentPack.Texts[Keys.Config.QualityRange],
                 ValueRangeLabel = s_CurrentPack.Texts[Keys.Config.ValueRange],
                 ValueWeightRangeLabel = s_CurrentPack.Texts[Keys.Config.ValueWeightRange],
+                UseAutoValueColorLabel = s_CurrentPack.Texts[Keys.Config.UseAutoValueColor],
                 QualityColorLabel = s_CurrentPack.Texts[Keys.Config.QualityColor],
                 ValueColorLabel = s_CurrentPack.Texts[Keys.Config.ValueColor],
                 ValueWeightColorLabel = s_CurrentPack.Texts[Keys.Config.ValueWeightColor],

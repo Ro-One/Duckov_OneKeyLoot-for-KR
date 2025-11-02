@@ -18,6 +18,7 @@ namespace OneKeyLoot
         public bool showQuality = true;
         public bool showValue = true;
         public bool showValueWeight = true;
+        public bool useAutoValueColor = true;
 
         public string qualityRange = "2,3,4,5";
         public string valueRange = "100,500,1000";
@@ -151,6 +152,12 @@ namespace OneKeyLoot
                 _config.valueColor,
                 null
             );
+            ModConfigAPI.SafeAddBoolDropdownList(
+                DisplayName,
+                "useAutoValueColors",
+                i18n.Config.UseAutoValueColorLabel,
+                _config.useAutoValueColor
+            );
             ModConfigAPI.SafeAddInputWithSlider(
                 DisplayName,
                 "valueRange",
@@ -244,6 +251,11 @@ namespace OneKeyLoot
                 DisplayName,
                 "valueWeightRange",
                 _config.valueWeightRange
+            );
+            _config.useAutoValueColor = ModConfigAPI.SafeLoad(
+                DisplayName,
+                "useAutoValueColor",
+                _config.useAutoValueColor
             );
             _config.qualityColor = ModConfigAPI.SafeLoad(
                 DisplayName,
