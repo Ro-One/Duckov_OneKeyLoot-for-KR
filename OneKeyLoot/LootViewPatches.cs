@@ -249,7 +249,9 @@ namespace OneKeyLoot
             );
 
             var qColors = ParseColorCsv(cfg.qualityColor, defaultPalette);
-            var vColors = ParseColorCsv(cfg.valueColor, defaultPalette);
+            var vColors = cfg.useAutoValueColor
+                ? ParseValueColorByRange(cfg.valueRange, defaultPalette)
+                : ParseColorCsv(cfg.valueColor, defaultPalette);
             var vwColors = ParseColorCsv(cfg.valueWeightColor, defaultPalette);
 
             // —— 清掉不需要的旧按钮，并补齐新按钮 ——
@@ -401,6 +403,73 @@ namespace OneKeyLoot
             }
         }
 
+        // ✅ 가치 범위에 따라 가치 버튼 색상 자동 지정
+        private static List<Color> ParseValueColorByRange(string range, IReadOnlyList<Color> fallback)
+        {
+            const int MaxButtons = 4;
+            try
+            {
+                if (string.IsNullOrWhiteSpace(range))
+                {
+                    return [.. fallback.Take(MaxButtons)];
+                }
+
+                var tokens = range.Split([',', ';', ' '], StringSplitOptions.RemoveEmptyEntries);
+                var list = new List<Color>(tokens.Length);
+                bool invalid = false;
+                foreach (var raw in tokens)
+                {
+                    if (int.TryParse(raw.Trim(), out var valueRange))
+                    {
+                        int valueColorPaletteIndex;
+                        if (valueRange >= 10000)
+                        {
+                            valueColorPaletteIndex = 6;
+                        }
+                        else if (valueRange >= 5000)
+                        {
+                            valueColorPaletteIndex = 5;
+                        }
+                        else if (valueRange >= 2500)
+                        {
+                            valueColorPaletteIndex = 4;
+                        }
+                        else if (valueRange >= 1200)
+                        {
+                            valueColorPaletteIndex = 3;
+                        }
+                        else if (valueRange >= 600)
+                        {
+                            valueColorPaletteIndex = 2;
+                        }
+                        else if (valueRange >= 200)
+                        {
+                            valueColorPaletteIndex = 1;
+                        }
+                        else
+                        {
+                            valueColorPaletteIndex = 0;
+                        }
+                        list.Add(AutoFillValueButtonColorPalette[valueColorPaletteIndex % AutoFillValueButtonColorPalette.Length]);
+                    }
+                    else
+                    {
+                        invalid = true;
+                        break;
+                    }
+                }
+                if (invalid || list.Count == 0)
+                {
+                    return [.. fallback.Take(MaxButtons)];
+                }
+                return [.. list.Take(MaxButtons)];
+            }
+            catch
+            {
+                return [.. fallback.Take(MaxButtons)];
+            }
+        }
+        
         private static Color GetButtonColor(IReadOnlyList<Color> palette, int ordinal) =>
             palette[Mathf.Abs(ordinal) % Mathf.Max(1, palette.Count)];
 
